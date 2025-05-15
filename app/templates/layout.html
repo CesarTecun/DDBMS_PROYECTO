@@ -62,7 +62,7 @@
                  class="accordion-collapse collapse {% if '/clientes' in request.path or '/dashboard' in request.path %}show{% endif %}"
                  data-bs-parent="#accordionClientes">
                 <div class="accordion-body ps-4">
-                    <a href="/dashboard"
+                    <a href="/dashboard{% if session.get('rol') == 'sucursal' and session.get('sucursal') %}?rol={{ session.get('sucursal') }}{% endif %}"
                        class="d-block text-white mb-2 {% if request.path == '/dashboard' %}fw-bold text-decoration-underline{% endif %}">
                         <i class="bi bi-eye me-2"></i> Ver
                     </a>

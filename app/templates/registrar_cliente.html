@@ -7,11 +7,29 @@
 <form method="POST" action="/clientes/registrar">
     <div class="mb-3">
         <label for="sucursal" class="form-label">Sucursal</label>
-        <select class="form-select" name="sucursal" required>
-            <option value="sucursal1">Sucursal 1</option>
-            <option value="sucursal2">Sucursal 2</option>
-            <option value="sucursal3">Sucursal 3</option>
+        <select class="form-select" name="sucursal" id="sucursal" required 
+            {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}disabled{% endif %}>
+            {% if session.get('rol') == 'sucursal' %}
+                <option value="{{ session.get('sucursal') }}" selected>
+                    {{ session.get('sucursal')|replace('sucursal', 'Sucursal ') }}
+                </option>
+            {% elif session.get('rol') == 'credit' %}
+                <option value="creditos" selected>Créditos</option>
+            {% elif session.get('rol') == 'mercadeo' %}
+                <option value="mercadeo" selected>Mercadeo</option>
+            {% else %}
+                <option value="">-- Seleccione una sucursal --</option>
+                <option value="sucursal1">Sucursal 1</option>
+                <option value="sucursal2">Sucursal 2</option>
+                <option value="sucursal3">Sucursal 3</option>
+                <option value="creditos">Créditos</option>
+                <option value="mercadeo">Mercadeo</option>
+            {% endif %}
         </select>
+        <!-- Campo oculto para enviar el valor cuando el select está deshabilitado -->
+        {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}
+        <input type="hidden" name="sucursal" value="{% if session.get('rol') == 'sucursal' %}{{ session.get('sucursal') }}{% elif session.get('rol') == 'credit' %}creditos{% else %}mercadeo{% endif %}">
+        {% endif %}
     </div>
 
     <div class="mb-3">

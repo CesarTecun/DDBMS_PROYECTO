@@ -3,6 +3,7 @@
 {% block content %}
 <h2 class="mb-4">Panel de Usuario</h2>
 
+{% if session.get('rol') == 'admin' %}
 <form method="get" action="/dashboard" class="mb-4">
     <label for="rol" class="form-label">Selecciona tipo de usuario:</label>
     <select name="rol" id="rol" class="form-select w-50" onchange="this.form.submit()">
@@ -15,6 +16,7 @@
         <option value="admin" {% if rol == 'admin' %}selected{% endif %}>Administrador</option>
     </select>
 </form>
+{% endif %}
 
 {% if rol and datos %}
     <h4>Datos de: {{ rol|capitalize }}</h4>
