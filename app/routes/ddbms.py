@@ -170,6 +170,8 @@ def registrar_cliente():
             conn.commit()
             conn.close()
             mensaje = "Cliente registrado correctamente"
+
+            return redirect(f"/dashboard?rol={data['sucursal']}")
         except Exception as e:
             mensaje = f"Error: {e}"
 

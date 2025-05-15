@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema DDBMS Bancario</title>
+    <title>DDBMS Banco</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -12,6 +12,8 @@
             height: 100vh;
             background-color: #1e1e2f;
             padding-top: 1rem;
+            position: fixed;
+            width: 240px;
         }
         .sidebar a {
             color: #ffffff;
@@ -26,41 +28,80 @@
         .sidebar .active {
             background-color: #007bff;
         }
+        .main {
+            margin-left: 240px;
+            padding: 1.5rem;
+        }
+        .sidebar .accordion-button:not(.collapsed),
+        .sidebar a.active {
+            background-color: #007bff !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
-<div class="d-flex">
-    <div class="sidebar">
-        
-        <div class="accordion accordion-flush" id="accordionMenu">
-            <h5 class="text-white text-center mb-4">DDBMS Banco</h5>
-            <a href="/dashboard" class="active"><i class="bi bi-speedometer2"></i> Panel</a>
-            
-            <!-- Submenú Clientes -->
-            <div class="accordion accordion-flush" id="accordionClientes">
-                <div class="accordion-item bg-transparent border-0">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed bg-transparent text-white ps-3" type="button" data-bs-toggle="collapse" data-bs-target="#submenuClientes" aria-expanded="false">
+
+<!-- Sidebar -->
+<!-- Sidebar -->
+<div class="sidebar">
+    <h5 class="text-white text-center mb-4">DDBMS Banco</h5>
+
+    <!-- Submenú Clientes -->
+    <div class="accordion accordion-flush" id="accordionClientes">
+        <div class="accordion-item bg-transparent border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button bg-transparent text-white ps-3 {% if '/clientes' in request.path or '/dashboard' in request.path %}active{% else %}collapsed{% endif %}"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#submenuClientes"
+                        aria-expanded="{{ 'true' if '/clientes' in request.path or '/dashboard' in request.path else 'false' }}">
                     <i class="bi bi-people me-2"></i> Clientes
-                    </button>
-                </h2>
-                <div id="submenuClientes" class="accordion-collapse collapse" data-bs-parent="#accordionClientes">
-                    <div class="accordion-body">
-                    <a href="/dashboard" class="d-block text-white mb-2"><i class="bi bi-eye me-2"></i> Ver</a>
-                    <a href="/clientes/registrar" class="d-block text-white"><i class="bi bi-person-plus me-2"></i> Crear</a>
-                    </div>
-                </div>
+                </button>
+            </h2>
+            <div id="submenuClientes"
+                 class="accordion-collapse collapse {% if '/clientes' in request.path or '/dashboard' in request.path %}show{% endif %}"
+                 data-bs-parent="#accordionClientes">
+                <div class="accordion-body ps-4">
+                    <a href="/dashboard"
+                       class="d-block text-white mb-2 {% if request.path == '/dashboard' %}fw-bold text-decoration-underline{% endif %}">
+                        <i class="bi bi-eye me-2"></i> Ver
+                    </a>
+                    <a href="/clientes/registrar"
+                       class="d-block text-white {% if request.path == '/clientes/registrar' %}fw-bold text-decoration-underline{% endif %}">
+                        <i class="bi bi-person-plus me-2"></i> Crear
+                    </a>
                 </div>
             </div>
         </div>
-        <a href="/acciones/crear-cuenta"><i class="bi bi-credit-card"></i> Cuentas</a>
-        <a href="/acciones/transferencia"><i class="bi bi-arrow-left-right"></i> Transferencias</a>
     </div>
-    <div class="flex-grow-1 p-4">
-        {% block content %}{% endblock %}
-    </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <a href="/acciones/crear-cuenta" class="{% if '/crear-cuenta' in request.path %}active{% endif %}">
+        <i class="bi bi-bank me-2"></i> Crear Cuenta
+    </a>
+
+    <a href="/acciones/transferencia" class="{% if '/transferencia' in request.path %}active{% endif %}">
+        <i class="bi bi-arrow-left-right me-2"></i> Transferencia
+    </a>
+
+    <hr class="text-white">
+    <a href="/logout">
+        <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+    </a>
+</div>
+
+<!-- Contenido principal -->
+<div class="main">
+    <!-- Encabezado superior -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Sistema Bancario Distribuido</h4>
+        {% if session.get("autenticado") %}
+            <span class="text-muted">Usuario: <strong>{{ session.get('usuario', '—') }}</strong></span>
+        {% endif %}
+    </div>
+
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
