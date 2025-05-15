@@ -3,6 +3,8 @@ from sqlalchemy import text
 from flask import Blueprint, jsonify
 from app.db import connections
 import random
+from flask import session, redirect
+
 
 ddbms_bp = Blueprint('ddbms', __name__)
 
@@ -45,7 +47,13 @@ from flask import render_template, request  # ya tienes jsonify, agrega estos
 
 @ddbms_bp.route('/dashboard', methods=['GET'])
 def dashboard():
-    rol = request.args.get('rol')
+    if not session.get("autenticado"):
+        return redirect("/login")
+
+    if session.get("rol") == "admin":
+        rol = request.args.get("rol")
+    else:
+        rol = request.args.get('rol')
     datos = []
 
     if rol in connections:
@@ -144,6 +152,11 @@ def ejecutar_formulario():
 
 @ddbms_bp.route("/clientes/registrar", methods=["GET", "POST"])
 def registrar_cliente():
+    if not session.get("autenticado"):
+        return redirect("/login")
+
+    if session.get("rol") not in ["sucursal", "admin"]:
+        return "❌ Acceso denegado", 403
     mensaje = ""
     if request.method == "POST":
         try:
@@ -161,6 +174,8 @@ def registrar_cliente():
             mensaje = f"Error: {e}"
 
     return render_template("registrar_cliente.html", mensaje=mensaje)
+
+
 
 @ddbms_bp.route("/acciones/crear-cuenta", methods=["GET", "POST"])
 def crear_cuenta():

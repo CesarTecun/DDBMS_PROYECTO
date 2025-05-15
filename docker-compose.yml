@@ -107,6 +107,21 @@ services:
     networks:
       - banco_net
 
+  mysql_admin:
+    image: mysql:8.0
+    container_name: mysql_admin
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: banco_admin
+    ports:
+      - "3312:3306"
+    volumes:
+      - ./docker/mysql_admin/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - banco_net
+
+
 networks:
   banco_net:
     driver: bridge

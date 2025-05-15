@@ -42,5 +42,12 @@ DBS = {
         'user': 'root',
         'password': 'root',
         'database': 'banco'
+    },
+    'admin': {
+        'host': 'mysql_admin',
+        'port': 3306,
+        'user': 'root',
+        'password': 'root',
+        'database': 'banco_admin'
     }
 }
