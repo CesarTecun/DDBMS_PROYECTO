@@ -1,0 +1,128 @@
+# app/routes/ddbms.py
+from sqlalchemy import text
+from flask import Blueprint, jsonify
+from app.db import connections
+
+ddbms_bp = Blueprint('ddbms', __name__)
+
+@ddbms_bp.route('/clientes/<sucursal>')
+def get_clientes(sucursal):
+    try:
+        if sucursal not in connections:
+            return jsonify({'error': 'Sucursal inválida'}), 404
+
+        conn = connections[sucursal].connect()
+        result = conn.execute(text("SELECT * FROM clientes"))
+        clientes = [dict(r._mapping) for r in result]
+        conn.close()
+        return jsonify(clientes)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@ddbms_bp.route('/tarjetas')
+def get_tarjetas():
+    conn = connections['credit'].connect()
+    result = conn.execute(text("SELECT * FROM tarjetas"))
+    tarjetas = [dict(r._mapping) for r in result]
+    conn.close()
+    return jsonify(tarjetas)
+
+@ddbms_bp.route('/test-conexiones')
+def test_conexiones():
+    estados = {}
+    for nombre, engine in connections.items():
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+                estados[nombre] = "Conexión exitosa"
+        except Exception as e:
+            estados[nombre] = f"Error: {str(e)}"
+    return jsonify(estados)
+
+from flask import render_template, request  # ya tienes jsonify, agrega estos
+
+@ddbms_bp.route('/dashboard', methods=['GET'])
+def dashboard():
+    rol = request.args.get('rol')
+    datos = []
+
+    if rol in connections:
+        try:
+            conn = connections[rol].connect()
+            if 'sucursal' in rol:
+                result = conn.execute(text("SELECT * FROM clientes"))
+            elif rol == 'credit':
+                result = conn.execute(text("SELECT * FROM tarjetas"))
+            elif rol == 'mercadeo':
+                result = conn.execute(text("SELECT * FROM campañas"))
+            else:
+                result = []
+            datos = [dict(r._mapping) for r in result]
+            conn.close()
+        except Exception as e:
+            print(f"[ERROR] {rol}: {e}")
+
+    return render_template("dashboard.html", rol=rol, datos=datos)
+
+from flask import render_template, request, redirect
+
+@ddbms_bp.route('/acciones', methods=['GET'])
+def ver_formulario():
+    return render_template("acciones.html")
+
+@ddbms_bp.route('/acciones/ejecutar', methods=['POST'])
+def ejecutar_formulario():
+    sucursal = request.form['sucursal']
+    operacion = request.form['operacion']
+    cliente_id = request.form['cliente_id']
+    monto = request.form.get('monto')
+    cuenta_destino = request.form.get('cuenta_destino')
+    tarjeta = request.form.get('tarjeta')
+
+    conn = connections[sucursal].connect()
+    msg = ""
+
+    try:
+        if operacion == "crear_cuenta":
+            conn.execute(text("INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo) VALUES (:cid, UUID(), 'AHORRO', 0.00)"), {"cid": cliente_id})
+            msg = "Cuenta creada"
+        elif operacion == "transferencia":
+            conn.execute(text("INSERT INTO transacciones (cuenta_id, tipo, monto, descripcion) VALUES (:cid, 'TRANSFERENCIA', :monto, 'Transferencia a cuenta ' || :dest)"),
+                         {"cid": cliente_id, "monto": monto, "dest": cuenta_destino})
+            msg = "Transferencia registrada"
+        elif operacion == "asociar_tarjeta":
+            credit_conn = connections["credit"].connect()
+            credit_conn.execute(text("INSERT INTO cliente_tarjeta (cliente_id, tarjeta_id) VALUES (:cid, (SELECT id FROM tarjetas WHERE numero_tarjeta = :t))"),
+                                {"cid": cliente_id, "t": tarjeta})
+            credit_conn.close()
+            msg = "Tarjeta asociada"
+
+        conn.commit()
+    except Exception as e:
+        msg = f" Error: {e}"
+    finally:
+        conn.close()
+
+    return render_template("acciones.html", resultado=msg)
+
+
+@ddbms_bp.route("/clientes/registrar", methods=["GET", "POST"])
+def registrar_cliente():
+    mensaje = ""
+    if request.method == "POST":
+        try:
+            data = request.form
+            conn = connections[data['sucursal']].connect()
+            stmt = text("""
+                INSERT INTO clientes (nombre_completo, fecha_nacimiento, documento_identidad, correo_electronico, telefono, direccion, municipio, departamento)
+                VALUES (:nombre_completo, :fecha_nacimiento, :documento_identidad, :correo_electronico, :telefono, :direccion, :municipio, :departamento)
+            """)
+            conn.execute(stmt, dict(data))
+            conn.commit()
+            conn.close()
+            mensaje = "✅ Cliente registrado correctamente"
+        except Exception as e:
+            mensaje = f"❌ Error: {e}"
+
+    return render_template("registrar_cliente.html", mensaje=mensaje)

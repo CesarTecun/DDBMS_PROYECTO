@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  flask_ddbms:
+    build: .
+    container_name: flask_ddbms
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    depends_on:
+      - mysql_master
+    networks:
+      - banco_net
+
+  mysql_master:
+    image: mysql:8.0
+    container_name: mysql_master
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3315:3306"
+    volumes:
+      - ./docker/mysql_master/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql_master/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - banco_net
+
+  mysql_sucursal1:
+    image: mysql:8.0
+    container_name: mysql_sucursal1
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./docker/mysql_sucursal1/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql_sucursal1/my.cnf:/etc/mysql/my.cnf
+    depends_on:
+      - mysql_master
+    networks:
+      - banco_net
+
+  mysql_sucursal2:
+    image: mysql:8.0
+    container_name: mysql_sucursal2
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3308:3306"
+    volumes:
+      - ./docker/mysql_sucursal2/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql_sucursal2/my.cnf:/etc/mysql/my.cnf
+    depends_on:
+      - mysql_master
+    networks:
+      - banco_net
+
+  mysql_sucursal3:
+    image: mysql:8.0
+    container_name: mysql_sucursal3
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3309:3306"
+    volumes:
+      - ./docker/mysql_sucursal3/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql_sucursal3/my.cnf:/etc/mysql/my.cnf
+    depends_on:
+      - mysql_master
+    networks:
+      - banco_net
+
+  mysql_credit:
+    image: mysql:8.0
+    container_name: mysql_credit
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3310:3306"
+    volumes:
+      - ./docker/mysql_credit/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql_credit/my.cnf:/etc/mysql/my.cnf
+    depends_on:
+      - mysql_master
+    networks:
+      - banco_net
+
+  mysql_mercadeo:
+    image: mysql:8.0
+    container_name: mysql_mercadeo
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3311:3306"
+    volumes:
+      - ./docker/mysql_mercadeo/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql_mercadeo/my.cnf:/etc/mysql/my.cnf
+    depends_on:
+      - mysql_master
+    networks:
+      - banco_net
+
+networks:
+  banco_net:
+    driver: bridge
