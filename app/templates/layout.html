@@ -45,7 +45,6 @@
 <!-- Sidebar -->
 <div class="sidebar">
     <h5 class="text-white text-center mb-4">DDBMS Banco</h5>
-
     <!-- Submenú Clientes -->
     <div class="accordion accordion-flush" id="accordionClientes">
         <div class="accordion-item bg-transparent border-0">
@@ -66,22 +65,36 @@
                        class="d-block text-white mb-2 {% if request.path == '/dashboard' %}fw-bold text-decoration-underline{% endif %}">
                         <i class="bi bi-eye me-2"></i> Ver
                     </a>
-                    <a href="/clientes/registrar"
-                       class="d-block text-white {% if request.path == '/clientes/registrar' %}fw-bold text-decoration-underline{% endif %}">
-                        <i class="bi bi-person-plus me-2"></i> Crear
-                    </a>
+                        {% if session.get("rol") != 'credit' %}
+                        <a href="/clientes/registrar"
+                        class="d-block text-white {% if request.path == '/clientes/registrar' %}fw-bold text-decoration-underline{% endif %}">
+                            <i class="bi bi-person-plus me-2"></i> Crear
+                        </a>
+                        {% endif %}
                 </div>
             </div>
         </div>
     </div>
+    {% if session.get('rol') in ['admin', 'credit'] %}
+        <a href="/tarjetas/gestionar" class="{% if '/tarjetas/gestionar' in request.path %}active{% endif %}">
+            <i class="bi bi-credit-card me-2"></i> Tarjetas
+        </a>
+    {% endif %}
 
-    <a href="/acciones/crear-cuenta" class="{% if '/crear-cuenta' in request.path %}active{% endif %}">
-        <i class="bi bi-bank me-2"></i> Crear Cuenta
-    </a>
+    {% if session.get("rol") not in ['credit', 'mercadeo'] %}
+        <a href="/acciones/crear-cuenta" class="{% if '/crear-cuenta' in request.path %}active{% endif %}">
+            <i class="bi bi-bank me-2"></i> Crear Cuenta
+        </a>
+    {% endif %}
 
-    <a href="/acciones/transferencia" class="{% if '/transferencia' in request.path %}active{% endif %}">
-        <i class="bi bi-arrow-left-right me-2"></i> Transferencia
-    </a>
+
+
+    {% if session.get("rol") not in ['credit', 'mercadeo'] %}
+        <a href="/acciones/transferencia" class="{% if '/transferencia' in request.path %}active{% endif %}">
+            <i class="bi bi-arrow-left-right me-2"></i> Transferencia
+        </a>
+    {% endif %}
+
 
     <hr class="text-white">
     <a href="/logout">
