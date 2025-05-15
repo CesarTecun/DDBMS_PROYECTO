@@ -40,13 +40,18 @@
                     <tr>
                     {% for key, valor in fila.items() %}
                         <td>
-                            {% if key == "numero_cuenta" and valor %}
-                                <a href="/cuenta/{{ rol }}/{{ valor }}">{{ valor }}</a>
+                            {% if key == "numero_cuenta" %}
+                                {% if valor %}
+                                    <a href="/cuenta/{{ rol }}/{{ valor }}">{{ valor }}</a>
+                                {% else %}
+                                    <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ rol }}" class="btn btn-sm btn-success">Crear cuenta</a>
+                                {% endif %}
                             {% else %}
-                                {{ valor }}
+                                {{ valor if valor is not none else "—" }}
                             {% endif %}
                         </td>
                     {% endfor %}
+
 
                     </tr>
                 {% endfor %}

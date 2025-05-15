@@ -12,16 +12,16 @@
     <form method="POST" action="/acciones/crear-cuenta">
         <div class="mb-3">
             <label for="sucursal" class="form-label">Sucursal</label>
-            <select class="form-select" name="sucursal" required>
-                <option value="sucursal1">Sucursal 1</option>
-                <option value="sucursal2">Sucursal 2</option>
-                <option value="sucursal3">Sucursal 3</option>
-            </select>
+        <select class="form-select" name="sucursal" required>
+            <option value="sucursal1" {% if sucursal == 'sucursal1' %}selected{% endif %}>Sucursal 1</option>
+            <option value="sucursal2" {% if sucursal == 'sucursal2' %}selected{% endif %}>Sucursal 2</option>
+            <option value="sucursal3" {% if sucursal == 'sucursal3' %}selected{% endif %}>Sucursal 3</option>
+        </select>
         </div>
 
         <div class="mb-3">
             <label for="documento_identidad" class="form-label">DPI del Cliente</label>
-            <input type="text" class="form-control" name="documento_identidad" maxlength="13" required>
+            <input type="text" class="form-control" name="documento_identidad" value="{{ dpi }}" maxlength="13" required>
         </div>
 
         <div class="mb-3">

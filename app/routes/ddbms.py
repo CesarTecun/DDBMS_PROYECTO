@@ -165,6 +165,9 @@ def registrar_cliente():
 @ddbms_bp.route("/acciones/crear-cuenta", methods=["GET", "POST"])
 def crear_cuenta():
     mensaje = ""
+    dpi_precargado = request.args.get("dpi", "")
+    sucursal_precargada = request.args.get("sucursal", "")
+
     if request.method == "POST":
         try:
             sucursal = request.form["sucursal"]
@@ -192,14 +195,12 @@ def crear_cuenta():
                     "PLAZO": "03"
                 }
                 tipo_codigo = tipo_map.get(tipo, "00")
-                banco_codigo = "059"  # Puedes cambiar este código según la sucursal
+                banco_codigo = "059"
 
-                # Generar número de cuenta personalizado
                 numero_principal = f"{random.randint(100000, 999999)}"
                 digito_verificador = str(sum(int(d) for d in numero_principal) % 10)
                 numero_cuenta = f"{banco_codigo}-{tipo_codigo}-{numero_principal}-{digito_verificador}"
 
-                # Insertar cuenta
                 conn.execute(
                     text("""
                         INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo)
@@ -213,13 +214,14 @@ def crear_cuenta():
                     }
                 )
                 conn.commit()
-                mensaje = f"Cuenta creada: {numero_cuenta}"
+                mensaje = f"✅ Cuenta creada: {numero_cuenta}"
             conn.close()
 
         except Exception as e:
-            mensaje = f"Error: {e}"
+            mensaje = f"❌ Error: {e}"
 
-    return render_template("crear_cuenta.html", mensaje=mensaje)
+    return render_template("crear_cuenta.html", mensaje=mensaje, dpi=dpi_precargado, sucursal=sucursal_precargada)
+
 
 
 def generar_numero_cuenta(codigo_banco, tipo):
@@ -255,7 +257,7 @@ def transferencia():
             ).fetchone()
 
             if origen is None:
-                mensaje = "❌ Cuenta origen no encontrada."
+                mensaje = "Cuenta origen no encontrada."
             elif origen[1] < monto:
                 mensaje = "❌ Saldo insuficiente en la cuenta origen."
             else:
