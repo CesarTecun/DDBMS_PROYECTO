@@ -5,7 +5,7 @@ services:
     build: .
     container_name: flask_ddbms
     ports:
-      - "5001:5000"
+      - "5000:5000"
     volumes:
       - .:/app
     depends_on:
@@ -24,6 +24,7 @@ services:
     volumes:
       - ./docker/mysql_master/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_master/my.cnf:/etc/mysql/my.cnf
+      - mysql_master_data:/var/lib/mysql
     networks:
       - banco_net
 
@@ -38,6 +39,7 @@ services:
     volumes:
       - ./docker/mysql_sucursal1/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_sucursal1/my.cnf:/etc/mysql/my.cnf
+      - mysql_sucursal1_data:/var/lib/mysql
     depends_on:
       - mysql_master
     networks:
@@ -54,6 +56,7 @@ services:
     volumes:
       - ./docker/mysql_sucursal2/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_sucursal2/my.cnf:/etc/mysql/my.cnf
+      - mysql_sucursal2_data:/var/lib/mysql
     depends_on:
       - mysql_master
     networks:
@@ -70,6 +73,7 @@ services:
     volumes:
       - ./docker/mysql_sucursal3/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_sucursal3/my.cnf:/etc/mysql/my.cnf
+      - mysql_sucursal3_data:/var/lib/mysql
     depends_on:
       - mysql_master
     networks:
@@ -86,6 +90,7 @@ services:
     volumes:
       - ./docker/mysql_credit/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_credit/my.cnf:/etc/mysql/my.cnf
+      - mysql_credit_data:/var/lib/mysql
     depends_on:
       - mysql_master
     networks:
@@ -102,6 +107,7 @@ services:
     volumes:
       - ./docker/mysql_mercadeo/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_mercadeo/my.cnf:/etc/mysql/my.cnf
+      - mysql_mercadeo_data:/var/lib/mysql
     depends_on:
       - mysql_master
     networks:
@@ -118,10 +124,19 @@ services:
       - "3312:3306"
     volumes:
       - ./docker/mysql_admin/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_admin_data:/var/lib/mysql
     networks:
       - banco_net
-
 
 networks:
   banco_net:
     driver: bridge
+
+volumes:
+  mysql_master_data:
+  mysql_sucursal1_data:
+  mysql_sucursal2_data:
+  mysql_sucursal3_data:
+  mysql_credit_data:
+  mysql_mercadeo_data:
+  mysql_admin_data:
