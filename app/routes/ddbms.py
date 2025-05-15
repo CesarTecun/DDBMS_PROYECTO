@@ -50,11 +50,12 @@ from flask import render_template, request  # ya tienes jsonify, agrega estos
 def dashboard():
     if not session.get("autenticado"):
         return redirect("/login")
-
     if session.get("rol") == "admin":
         rol = request.args.get("rol")
+    elif session.get("rol") == "credit":
+        rol = "credit"
     else:
-        rol = request.args.get('rol')
+        rol = session.get("sucursal")
     datos = []
 
     if rol in connections:

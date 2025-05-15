@@ -1,94 +1,98 @@
-{# templates/registrar_cliente.html #}
+{# templates/gestionar_tarjetas.html #}
 {% extends "layout.html" %}
 
 {% block content %}
 <div class="container py-5">
-    <h2 class="mb-4">Gestión de Tarjetas de Crédito</h2>
+    {% if session.get("rol") in ['admin', 'credit'] %}
+        <h2 class="mb-4">Gestión de Tarjetas de Crédito</h2>
 
-    <!-- Formulario para ingresar DPI y generar tarjeta -->
-    <form method="POST" class="row g-3 mb-4">
-        <div class="col-md-3">
-            <label class="form-label">DPI del cliente</label>
-            <input type="text" class="form-control" name="dpi" maxlength="13" required value="{{ dpi or '' }}">
-        </div>
+        <!-- Formulario para ingresar DPI y generar tarjeta -->
+        <form method="POST" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label">DPI del cliente</label>
+                <input type="text" class="form-control" name="dpi" maxlength="13" required value="{{ dpi or '' }}">
+            </div>
 
-        {% if tarjeta_generada %}
-        <div class="col-md-3">
-            <label class="form-label">Número de tarjeta</label>
-            <input type="text" class="form-control" name="numero_tarjeta" value="{{ tarjeta_generada.numero }}" readonly>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">CVV</label>
-            <input type="text" class="form-control" name="cvv" value="{{ tarjeta_generada.cvv }}" readonly>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Teléfono</label>
-            <input type="text" class="form-control" value="{{ tarjeta_generada.telefono }}" readonly>
-        </div>
-        <div class="col-md-2 d-grid">
-            <label class="form-label invisible">Asociar</label>
-            <button type="submit" name="asociar" class="btn btn-success">Asociar tarjeta</button>
-        </div>
-        <div class="col-md-12 text-end">
-            <a href="/tarjetas/gestionar" class="btn btn-outline-secondary btn-sm">Cancelar</a>
-        </div>
-        {% else %}
-        <div class="col-md-2 d-grid align-items-end">
-            <button type="submit" name="generar" class="btn btn-primary">Generar tarjeta</button>
-        </div>
+            {% if tarjeta_generada %}
+            <div class="col-md-3">
+                <label class="form-label">Número de tarjeta</label>
+                <input type="text" class="form-control" name="numero_tarjeta" value="{{ tarjeta_generada.numero }}" readonly>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">CVV</label>
+                <input type="text" class="form-control" name="cvv" value="{{ tarjeta_generada.cvv }}" readonly>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control" value="{{ tarjeta_generada.telefono }}" readonly>
+            </div>
+            <div class="col-md-2 d-grid">
+                <label class="form-label invisible">Asociar</label>
+                <button type="submit" name="asociar" class="btn btn-success">Asociar tarjeta</button>
+            </div>
+            <div class="col-md-12 text-end">
+                <a href="/tarjetas/gestionar" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+            </div>
+            {% else %}
+            <div class="col-md-2 d-grid align-items-end">
+                <button type="submit" name="generar" class="btn btn-primary">Generar tarjeta</button>
+            </div>
+            {% endif %}
+        </form>
+
+        {% if mensaje %}
+            <div class="alert alert-info">{{ mensaje }}</div>
         {% endif %}
-    </form>
 
-    {% if mensaje %}
-        <div class="alert alert-info">{{ mensaje }}</div>
+        <!-- Tabla de tarjetas -->
+        <h4 class="mb-3">Tarjetas Registradas</h4>
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Número</th>
+                    <th>CVV</th>
+                    <th>Expira</th>
+                    <th>Límite</th>
+                    <th>Saldo</th>
+                    <th>Estado</th>
+                    <th>Teléfono</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tarjetas %}
+                <tr>
+                    <td>{{ t.id }}</td>
+                    <td>{{ t.numero_tarjeta }}</td>
+                    <td>{{ t.cvv }}</td>
+                    <td>{{ t.fecha_expiracion }}</td>
+                    <td>{{ t.limite_credito }}</td>
+                    <td>{{ t.saldo_actual }}</td>
+                    <td>
+                        {% if rol == 'admin' %}
+                        <form method="POST" action="/tarjetas/gestionar" class="d-flex">
+                            <input type="hidden" name="actualizar_estado" value="1">
+                            <input type="hidden" name="id" value="{{ t.id }}">
+                            <select name="estado" class="form-select form-select-sm me-2">
+                                <option {% if t.estado == 'ACTIVA' %}selected{% endif %}>ACTIVA</option>
+                                <option {% if t.estado == 'BLOQUEADA' %}selected{% endif %}>BLOQUEADA</option>
+                                <option {% if t.estado == 'VENCIDA' %}selected{% endif %}>VENCIDA</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
+                        </form>
+                        {% else %}
+                            {{ t.estado }}
+                        {% endif %}
+                    </td>
+                    <td>{{ t.telefono or 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="/dashboard" class="btn btn-secondary mt-4">← Volver al Dashboard</a>
+    {% else %}
+        <div class="alert alert-danger">❌ No tienes permiso para ver esta sección.</div>
     {% endif %}
-
-    <!-- Tabla de tarjetas -->
-    <h4 class="mb-3">Tarjetas Registradas</h4>
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Número</th>
-                <th>CVV</th>
-                <th>Expira</th>
-                <th>Límite</th>
-                <th>Saldo</th>
-                <th>Estado</th>
-                <th>Teléfono</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in tarjetas %}
-            <tr>
-                <td>{{ t.id }}</td>
-                <td>{{ t.numero_tarjeta }}</td>
-                <td>{{ t.cvv }}</td>
-                <td>{{ t.fecha_expiracion }}</td>
-                <td>{{ t.limite_credito }}</td>
-                <td>{{ t.saldo_actual }}</td>
-                <td>
-                    {% if rol == 'admin' %}
-                    <form method="POST" action="/tarjetas/gestionar" class="d-flex">
-                        <input type="hidden" name="actualizar_estado" value="1">
-                        <input type="hidden" name="id" value="{{ t.id }}">
-                        <select name="estado" class="form-select form-select-sm me-2">
-                            <option {% if t.estado == 'ACTIVA' %}selected{% endif %}>ACTIVA</option>
-                            <option {% if t.estado == 'BLOQUEADA' %}selected{% endif %}>BLOQUEADA</option>
-                            <option {% if t.estado == 'VENCIDA' %}selected{% endif %}>VENCIDA</option>
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
-                    </form>
-                    {% else %}
-                        {{ t.estado }}
-                    {% endif %}
-                </td>
-                <td>{{ t.telefono or 'N/A' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <a href="/dashboard" class="btn btn-secondary mt-4">← Volver al Dashboard</a>
 </div>
 {% endblock %}
