@@ -156,9 +156,9 @@ def registrar_cliente():
             conn.execute(stmt, dict(data))
             conn.commit()
             conn.close()
-            mensaje = "✅ Cliente registrado correctamente"
+            mensaje = "Cliente registrado correctamente"
         except Exception as e:
-            mensaje = f"❌ Error: {e}"
+            mensaje = f"Error: {e}"
 
     return render_template("registrar_cliente.html", mensaje=mensaje)
 
@@ -181,7 +181,7 @@ def crear_cuenta():
             ).fetchone()
 
             if result is None:
-                mensaje = "❌ No se encontró ningún cliente con ese DPI."
+                mensaje = "No se encontró ningún cliente con ese DPI."
             else:
                 cliente_id = result[0]
 
@@ -213,11 +213,11 @@ def crear_cuenta():
                     }
                 )
                 conn.commit()
-                mensaje = f"✅ Cuenta creada: {numero_cuenta}"
+                mensaje = f"Cuenta creada: {numero_cuenta}"
             conn.close()
 
         except Exception as e:
-            mensaje = f"❌ Error: {e}"
+            mensaje = f"Error: {e}"
 
     return render_template("crear_cuenta.html", mensaje=mensaje)
 
@@ -233,3 +233,78 @@ def generar_numero_cuenta(codigo_banco, tipo):
 @ddbms_bp.route("/acciones/nueva", methods=["GET"])
 def menu_nuevo():
     return render_template("menu_nuevo.html")
+
+@ddbms_bp.route("/acciones/transferencia", methods=["GET", "POST"])
+def transferencia():
+    mensaje = ""
+    if request.method == "POST":
+        try:
+            origen_sucursal = request.form["origen_sucursal"]
+            destino_sucursal = request.form["destino_sucursal"]
+            cuenta_origen = request.form["cuenta_origen"]
+            cuenta_destino = request.form["cuenta_destino"]
+            monto = float(request.form["monto"])
+
+            conn_origen = connections[origen_sucursal].connect()
+            conn_destino = connections[destino_sucursal].connect()
+
+            # Buscar cuenta origen y validar saldo
+            origen = conn_origen.execute(
+                text("SELECT id, saldo FROM cuentas WHERE numero_cuenta = :num"),
+                {"num": cuenta_origen}
+            ).fetchone()
+
+            if origen is None:
+                mensaje = "❌ Cuenta origen no encontrada."
+            elif origen[1] < monto:
+                mensaje = "❌ Saldo insuficiente en la cuenta origen."
+            else:
+                # Buscar cuenta destino
+                destino = conn_destino.execute(
+                    text("SELECT id FROM cuentas WHERE numero_cuenta = :num"),
+                    {"num": cuenta_destino}
+                ).fetchone()
+
+                if destino is None:
+                    mensaje = "❌ Cuenta destino no encontrada."
+                else:
+                    origen_id = origen[0]
+                    destino_id = destino[0]
+
+                    # Descontar de cuenta origen
+                    conn_origen.execute(
+                        text("""
+                            INSERT INTO transacciones (cuenta_id, tipo, monto, descripcion)
+                            VALUES (:id, 'TRANSFERENCIA', :monto, :desc)
+                        """),
+                        {"id": origen_id, "monto": monto, "desc": f"A {cuenta_destino}"}
+                    )
+                    conn_origen.execute(
+                        text("UPDATE cuentas SET saldo = saldo - :monto WHERE id = :id"),
+                        {"monto": monto, "id": origen_id}
+                    )
+
+                    # Abonar en cuenta destino
+                    conn_destino.execute(
+                        text("""
+                            INSERT INTO transacciones (cuenta_id, tipo, monto, descripcion)
+                            VALUES (:id, 'TRANSFERENCIA', :monto, :desc)
+                        """),
+                        {"id": destino_id, "monto": monto, "desc": f"De {cuenta_origen}"}
+                    )
+                    conn_destino.execute(
+                        text("UPDATE cuentas SET saldo = saldo + :monto WHERE id = :id"),
+                        {"monto": monto, "id": destino_id}
+                    )
+
+                    conn_origen.commit()
+                    conn_destino.commit()
+                    mensaje = "✅ Transferencia completada exitosamente."
+
+            conn_origen.close()
+            conn_destino.close()
+
+        except Exception as e:
+            mensaje = f"❌ Error: {e}"
+
+    return render_template("transferencia.html", mensaje=mensaje)
