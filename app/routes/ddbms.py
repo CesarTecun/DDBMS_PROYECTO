@@ -2,6 +2,7 @@
 from sqlalchemy import text
 from flask import Blueprint, jsonify
 from app.db import connections
+import random
 
 ddbms_bp = Blueprint('ddbms', __name__)
 
@@ -51,19 +52,53 @@ def dashboard():
         try:
             conn = connections[rol].connect()
             if 'sucursal' in rol:
-                result = conn.execute(text("SELECT * FROM clientes"))
+                # Mostrar clientes con sus cuentas
+                result = conn.execute(text("""
+                    SELECT 
+                        c.id AS cliente_id,
+                        c.nombre_completo,
+                        c.documento_identidad,
+                        cu.numero_cuenta,
+                        cu.tipo,
+                        cu.estado,
+                        cu.saldo,
+                        cu.fecha_apertura
+                    FROM clientes c
+                    LEFT JOIN cuentas cu ON c.id = cu.cliente_id
+                """))
             elif rol == 'credit':
                 result = conn.execute(text("SELECT * FROM tarjetas"))
             elif rol == 'mercadeo':
                 result = conn.execute(text("SELECT * FROM campañas"))
             else:
                 result = []
+
             datos = [dict(r._mapping) for r in result]
             conn.close()
         except Exception as e:
             print(f"[ERROR] {rol}: {e}")
 
     return render_template("dashboard.html", rol=rol, datos=datos)
+
+@ddbms_bp.route("/cuenta/<sucursal>/<numero_cuenta>")
+def ver_transacciones(sucursal, numero_cuenta):
+    transacciones = []
+    if sucursal in connections:
+        try:
+            conn = connections[sucursal].connect()
+            result = conn.execute(text("""
+                SELECT t.id, t.tipo, t.monto, t.descripcion, t.fecha
+                FROM transacciones t
+                JOIN cuentas c ON t.cuenta_id = c.id
+                WHERE c.numero_cuenta = :num
+            """), {"num": numero_cuenta})
+            transacciones = [dict(r._mapping) for r in result]
+            conn.close()
+        except Exception as e:
+            transacciones = [{"Error": str(e)}]
+
+    return render_template("transacciones.html", numero_cuenta=numero_cuenta, transacciones=transacciones)
+
 
 from flask import render_template, request, redirect
 
@@ -126,3 +161,75 @@ def registrar_cliente():
             mensaje = f"❌ Error: {e}"
 
     return render_template("registrar_cliente.html", mensaje=mensaje)
+
+@ddbms_bp.route("/acciones/crear-cuenta", methods=["GET", "POST"])
+def crear_cuenta():
+    mensaje = ""
+    if request.method == "POST":
+        try:
+            sucursal = request.form["sucursal"]
+            dpi = request.form["documento_identidad"]
+            tipo = request.form["tipo"]
+            saldo = request.form["saldo"]
+
+            conn = connections[sucursal].connect()
+
+            # Buscar cliente por DPI
+            result = conn.execute(
+                text("SELECT id FROM clientes WHERE documento_identidad = :dpi"),
+                {"dpi": dpi}
+            ).fetchone()
+
+            if result is None:
+                mensaje = "❌ No se encontró ningún cliente con ese DPI."
+            else:
+                cliente_id = result[0]
+
+                # Mapeo de tipo a código TT
+                tipo_map = {
+                    "AHORRO": "01",
+                    "CORRIENTE": "02",
+                    "PLAZO": "03"
+                }
+                tipo_codigo = tipo_map.get(tipo, "00")
+                banco_codigo = "059"  # Puedes cambiar este código según la sucursal
+
+                # Generar número de cuenta personalizado
+                numero_principal = f"{random.randint(100000, 999999)}"
+                digito_verificador = str(sum(int(d) for d in numero_principal) % 10)
+                numero_cuenta = f"{banco_codigo}-{tipo_codigo}-{numero_principal}-{digito_verificador}"
+
+                # Insertar cuenta
+                conn.execute(
+                    text("""
+                        INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo)
+                        VALUES (:cliente_id, :numero_cuenta, :tipo, :saldo)
+                    """),
+                    {
+                        "cliente_id": cliente_id,
+                        "numero_cuenta": numero_cuenta,
+                        "tipo": tipo,
+                        "saldo": saldo
+                    }
+                )
+                conn.commit()
+                mensaje = f"✅ Cuenta creada: {numero_cuenta}"
+            conn.close()
+
+        except Exception as e:
+            mensaje = f"❌ Error: {e}"
+
+    return render_template("crear_cuenta.html", mensaje=mensaje)
+
+
+def generar_numero_cuenta(codigo_banco, tipo):
+    import random
+    numero_principal = f"{random.randint(100000, 999999)}"
+    suma = sum(int(d) for d in numero_principal)
+    digito_verificador = str(suma % 10)
+    return f"{codigo_banco}-{tipo}-{numero_principal}-{digito_verificador}"
+
+
+@ddbms_bp.route("/acciones/nueva", methods=["GET"])
+def menu_nuevo():
+    return render_template("menu_nuevo.html")

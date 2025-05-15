@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS clientes (
     fecha_registro DATE DEFAULT (CURRENT_DATE)
 );
 
--- Tabla de cuentas
+-- Tabla de cuentas (numero_cuenta ahora soporta UUID completo)
 CREATE TABLE IF NOT EXISTS cuentas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cliente_id INT NOT NULL,
-    numero_cuenta VARCHAR(20) UNIQUE NOT NULL,
+    numero_cuenta VARCHAR(36) UNIQUE NOT NULL,
     tipo ENUM('AHORRO', 'CORRIENTE', 'PLAZO') NOT NULL,
     estado ENUM('ACTIVA', 'INACTIVA', 'CERRADA') DEFAULT 'ACTIVA',
     saldo DECIMAL(14,2) DEFAULT 0.00,

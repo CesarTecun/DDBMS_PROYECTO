@@ -22,6 +22,8 @@
             <option value="admin">Administrador</option>
         </select>
     </form>
+    <a href="/acciones/nueva" class="btn btn-outline-primary mb-3">+ Nuevo Registro</a>
+
 
     {% if rol and datos %}
         <h3 class="mt-4">Datos de: {{ rol|capitalize }}</h3>
@@ -36,9 +38,16 @@
             <tbody>
                 {% for fila in datos %}
                     <tr>
-                        {% for valor in fila.values() %}
-                            <td>{{ valor }}</td>
-                        {% endfor %}
+                    {% for key, valor in fila.items() %}
+                        <td>
+                            {% if key == "numero_cuenta" and valor %}
+                                <a href="/cuenta/{{ rol }}/{{ valor }}">{{ valor }}</a>
+                            {% else %}
+                                {{ valor }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+
                     </tr>
                 {% endfor %}
             </tbody>
