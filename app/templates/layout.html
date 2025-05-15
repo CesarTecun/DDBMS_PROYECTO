@@ -35,7 +35,8 @@
         <div class="accordion accordion-flush" id="accordionMenu">
             <h5 class="text-white text-center mb-4">DDBMS Banco</h5>
             <a href="/dashboard" class="active"><i class="bi bi-speedometer2"></i> Panel</a>
-            
+            <a href="/tarjetas/gestionar" class="{% if '/transferencia' in request.path %}active{% endif %}">
+        <i class="bi bi-credit-card"></i> tarjetas</a>
             <!-- Submenú Clientes -->
             <div class="accordion accordion-flush" id="accordionClientes">
                 <div class="accordion-item bg-transparent border-0">
