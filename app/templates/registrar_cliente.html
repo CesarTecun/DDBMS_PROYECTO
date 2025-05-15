@@ -1,75 +1,68 @@
 {# templates/registrar_cliente.html #}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Registrar Cliente</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-5">
-    <h2 class="mb-4">Registro de Cliente</h2>
+{% extends "layout.html" %}
 
-    <form method="POST" action="/clientes/registrar">
-        <div class="mb-3">
-            <label for="sucursal" class="form-label">Sucursal</label>
-            <select class="form-select" name="sucursal" required>
-                <option value="sucursal1">Sucursal 1</option>
-                <option value="sucursal2">Sucursal 2</option>
-                <option value="sucursal3">Sucursal 3</option>
-            </select>
+{% block content %}
+<h2 class="mb-4">Registro de Cliente</h2>
+
+<form method="POST" action="/clientes/registrar">
+    <div class="mb-3">
+        <label for="sucursal" class="form-label">Sucursal</label>
+        <select class="form-select" name="sucursal" required>
+            <option value="sucursal1">Sucursal 1</option>
+            <option value="sucursal2">Sucursal 2</option>
+            <option value="sucursal3">Sucursal 3</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="nombre_completo" class="form-label">Nombre completo</label>
+        <input type="text" class="form-control" name="nombre_completo" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
+        <input type="date" class="form-control" name="fecha_nacimiento" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="documento_identidad" class="form-label">DPI (documento de identidad)</label>
+        <input type="text" class="form-control" name="documento_identidad" required maxlength="13">
+    </div>
+
+    <div class="mb-3">
+        <label for="correo" class="form-label">Correo electrónico</label>
+        <input type="email" class="form-control" name="correo_electronico">
+    </div>
+
+    <div class="mb-3">
+        <label for="telefono" class="form-label">Teléfono</label>
+        <input type="text" class="form-control" name="telefono" maxlength="15">
+    </div>
+
+    <div class="mb-3">
+        <label for="direccion" class="form-label">Dirección</label>
+        <input type="text" class="form-control" name="direccion">
+    </div>
+
+    <div class="row mb-3">
+        <div class="col">
+            <label class="form-label">Municipio</label>
+            <input type="text" class="form-control" name="municipio">
         </div>
-
-        <div class="mb-3">
-            <label for="nombre_completo" class="form-label">Nombre completo</label>
-            <input type="text" class="form-control" name="nombre_completo" required>
+        <div class="col">
+            <label class="form-label">Departamento</label>
+            <input type="text" class="form-control" name="departamento">
         </div>
+    </div>
 
-        <div class="mb-3">
-            <label for="fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
-            <input type="date" class="form-control" name="fecha_nacimiento" required>
-        </div>
+    <button type="submit" class="btn btn-success">Registrar Cliente</button>
+</form>
 
-        <div class="mb-3">
-            <label for="documento_identidad" class="form-label">DPI (documento de identidad)</label>
-            <input type="text" class="form-control" name="documento_identidad" required maxlength="13">
-        </div>
+{% if mensaje %}
+    <div class="alert alert-info mt-4">{{ mensaje }}</div>
+{% endif %}
 
-        <div class="mb-3">
-            <label for="correo" class="form-label">Correo electrónico</label>
-            <input type="email" class="form-control" name="correo_electronico">
-        </div>
-
-        <div class="mb-3">
-            <label for="telefono" class="form-label">Teléfono</label>
-            <input type="text" class="form-control" name="telefono" maxlength="15">
-        </div>
-
-        <div class="mb-3">
-            <label for="direccion" class="form-label">Dirección</label>
-            <input type="text" class="form-control" name="direccion">
-        </div>
-
-        <div class="row mb-3">
-            <div class="col">
-                <label class="form-label">Municipio</label>
-                <input type="text" class="form-control" name="municipio">
-            </div>
-            <div class="col">
-                <label class="form-label">Departamento</label>
-                <input type="text" class="form-control" name="departamento">
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-success">Registrar Cliente</button>
-    </form>
-
-    {% if mensaje %}
-        <div class="alert alert-info mt-4">{{ mensaje }}</div>
-    {% endif %}
-    <div class="mt-4">
+<div class="mt-4">
     <a href="/acciones/nueva" class="btn btn-outline-secondary">← Volver al Menú</a>
 </div>
-</div>
-</body>
-</html>
+{% endblock %}
