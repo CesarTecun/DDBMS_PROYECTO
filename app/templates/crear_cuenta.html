@@ -7,21 +7,28 @@
 <form method="POST" action="/acciones/crear-cuenta">
     <div class="mb-3">
         <label for="sucursal" class="form-label">Sucursal</label>
-        <select class="form-select" name="sucursal" required>
-            <option value="sucursal1" {% if sucursal == 'sucursal1' %}selected{% endif %}>Sucursal 1</option>
-            <option value="sucursal2" {% if sucursal == 'sucursal2' %}selected{% endif %}>Sucursal 2</option>
-            <option value="sucursal3" {% if sucursal == 'sucursal3' %}selected{% endif %}>Sucursal 3</option>
-        </select>
+
+        {% if session.get('rol') == 'admin' %}
+            <select class="form-select" name="sucursal" required>
+                <option value="sucursal1" {% if sucursal == 'sucursal1' %}selected{% endif %}>Sucursal 1</option>
+                <option value="sucursal2" {% if sucursal == 'sucursal2' %}selected{% endif %}>Sucursal 2</option>
+                <option value="sucursal3" {% if sucursal == 'sucursal3' %}selected{% endif %}>Sucursal 3</option>
+            </select>
+        {% else %}
+            <input type="text" class="form-control" value="{{ sucursal|replace('sucursal', 'Sucursal ') }}" disabled>
+            <input type="hidden" name="sucursal" value="{{ sucursal }}">
+        {% endif %}
     </div>
 
     <div class="mb-3">
         <label for="documento_identidad" class="form-label">DPI del Cliente</label>
-        <input type="text" class="form-control" name="documento_identidad" value="{{ dpi }}" maxlength="13" required>
+        <input type="text" class="form-control" name="documento_identidad" value="{{ dpi }}" maxlength="13" required pattern="^\d{13}$" title="Debe tener exactamente 13 dígitos">
     </div>
 
     <div class="mb-3">
         <label for="tipo" class="form-label">Tipo de Cuenta</label>
         <select class="form-select" name="tipo" required>
+            <option value="">-- Selecciona un tipo --</option>
             <option value="AHORRO">Ahorro</option>
             <option value="CORRIENTE">Corriente</option>
             <option value="PLAZO">Plazo</option>
@@ -30,7 +37,7 @@
 
     <div class="mb-3">
         <label for="saldo" class="form-label">Saldo Inicial</label>
-        <input type="number" step="0.01" class="form-control" name="saldo" value="0.00" required>
+        <input type="number" step="0.01" min="0" class="form-control" name="saldo" value="0.00" required>
     </div>
 
     <button type="submit" class="btn btn-primary">Crear Cuenta</button>

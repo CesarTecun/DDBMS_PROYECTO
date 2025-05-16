@@ -210,10 +210,27 @@ def crear_cuenta():
 
     if request.method == "POST":
         try:
+            # Obtener datos del formulario
             sucursal = request.form["sucursal"]
             dpi = request.form["documento_identidad"]
             tipo = request.form["tipo"]
             saldo = request.form["saldo"]
+
+            # Validación de tipo
+            if tipo not in ["AHORRO", "CORRIENTE", "PLAZO"]:
+                return render_template("crear_cuenta.html", mensaje="❌ Tipo de cuenta inválido.", dpi=dpi, sucursal=sucursal)
+
+            # Validar y convertir saldo
+            try:
+                saldo = float(saldo)
+                if saldo < 0:
+                    raise ValueError("Saldo negativo.")
+            except ValueError:
+                return render_template("crear_cuenta.html", mensaje="❌ El saldo debe ser un número positivo.", dpi=dpi, sucursal=sucursal)
+
+            # Protección según rol
+            if session.get("rol") != "admin":
+                sucursal = session.get("sucursal")
 
             conn = connections[sucursal].connect()
 
@@ -224,46 +241,51 @@ def crear_cuenta():
             ).fetchone()
 
             if result is None:
-                mensaje = "No se encontró ningún cliente con ese DPI."
+                mensaje = "❌ No se encontró ningún cliente con ese DPI."
             else:
                 cliente_id = result[0]
 
-                # Mapeo de tipo a código TT
-                tipo_map = {
-                    "AHORRO": "01",
-                    "CORRIENTE": "02",
-                    "PLAZO": "03"
-                }
-                tipo_codigo = tipo_map.get(tipo, "00")
-                banco_codigo = "059"
+                # Verificar si ya tiene cuenta de ese tipo
+                existe = conn.execute(
+                    text("SELECT 1 FROM cuentas WHERE cliente_id = :cliente_id AND tipo = :tipo"),
+                    {"cliente_id": cliente_id, "tipo": tipo}
+                ).fetchone()
 
-                numero_principal = f"{random.randint(100000, 999999)}"
-                digito_verificador = str(sum(int(d) for d in numero_principal) % 10)
-                numero_cuenta = f"{banco_codigo}-{tipo_codigo}-{numero_principal}-{digito_verificador}"
+                if existe:
+                    mensaje = f"⚠️ El cliente ya tiene una cuenta de tipo {tipo}."
+                else:
+                    # Generar número de cuenta
+                    tipo_map = {"AHORRO": "01", "CORRIENTE": "02", "PLAZO": "03"}
+                    tipo_codigo = tipo_map.get(tipo, "00")
+                    banco_codigo = "059"
 
-                conn.execute(
-                    text("""
-                        INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo, sucursal)
-                        VALUES (:cliente_id, :numero_cuenta, :tipo, :saldo, :sucursal)
-                    """),
-                    {
-                        "cliente_id": cliente_id,
-                        "numero_cuenta": numero_cuenta,
-                        "tipo": tipo,
-                        "saldo": saldo,
-                        "sucursal": sucursal
-                    }
-                )
+                    numero_principal = f"{random.randint(100000, 999999)}"
+                    digito_verificador = str(sum(int(d) for d in numero_principal) % 10)
+                    numero_cuenta = f"{banco_codigo}-{tipo_codigo}-{numero_principal}-{digito_verificador}"
 
-                conn.commit()
-                mensaje = f"✅ Cuenta creada: {numero_cuenta}"
+                    # Insertar cuenta
+                    conn.execute(
+                        text("""
+                            INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo, sucursal)
+                            VALUES (:cliente_id, :numero_cuenta, :tipo, :saldo, :sucursal)
+                        """),
+                        {
+                            "cliente_id": cliente_id,
+                            "numero_cuenta": numero_cuenta,
+                            "tipo": tipo,
+                            "saldo": saldo,
+                            "sucursal": sucursal
+                        }
+                    )
+                    conn.commit()
+                    mensaje = f"✅ Cuenta creada exitosamente: {numero_cuenta}"
+
             conn.close()
 
         except Exception as e:
-            mensaje = f"❌ Error: {e}"
+            mensaje = f"❌ Error inesperado: {e}"
 
     return render_template("crear_cuenta.html", mensaje=mensaje, dpi=dpi_precargado, sucursal=sucursal_precargada)
-
 
 
 def generar_numero_cuenta(codigo_banco, tipo):

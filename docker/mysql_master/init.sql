@@ -1,18 +1,18 @@
 CREATE DATABASE IF NOT EXISTS banco;
 USE banco;
 
--- Tabla de clientes (igual que en las sucursales)
+-- Tabla de clientes
 CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre_completo VARCHAR(100) NOT NULL,
     fecha_nacimiento DATE NOT NULL,
-    documento_identidad VARCHAR(13) UNIQUE NOT NULL COMMENT 'DPI guatemalteco',
+    documento_identidad VARCHAR(13) UNIQUE NOT NULL,
     correo_electronico VARCHAR(100),
-    telefono VARCHAR(15) COMMENT 'Formato: 8 dígitos nacionales',
+    telefono VARCHAR(15),
     direccion TEXT,
     municipio VARCHAR(50),
     departamento VARCHAR(50),
-    sucursal VARCHAR(50),  -- fragmentación horizontal
+    sucursal VARCHAR(50),  -- Fragmentación horizontal
     fecha_registro DATE DEFAULT (CURRENT_DATE)
 );
 
@@ -39,12 +39,29 @@ CREATE TABLE IF NOT EXISTS transacciones (
     FOREIGN KEY (cuenta_id) REFERENCES cuentas(id)
 );
 
--- ✅ Usuario para replicación
+-- Usuario de replicación (usa plugin compatible con réplicas)
 CREATE USER IF NOT EXISTS 'replica'@'%' IDENTIFIED WITH mysql_native_password BY 'replica123';
 GRANT REPLICATION SLAVE ON *.* TO 'replica'@'%';
 
--- ✅ Usuario técnico para ProxySQL
-CREATE USER IF NOT EXISTS 'flask_user'@'%' IDENTIFIED BY 'flask_pass';
-GRANT ALL PRIVILEGES ON *.* TO 'flask_user'@'%';
+-- Usuario de escritura global (para ProxySQL)
+CREATE USER IF NOT EXISTS 'admin_user'@'%' IDENTIFIED WITH mysql_native_password BY 'clave123';
+GRANT ALL PRIVILEGES ON banco.* TO 'admin_user'@'%';
 
+-- Usuarios por sucursal (solo lectura)
+CREATE USER IF NOT EXISTS 'read_sucursal1'@'%' IDENTIFIED WITH mysql_native_password BY 'clave123';
+GRANT SELECT ON banco.* TO 'read_sucursal1'@'%';
+
+CREATE USER IF NOT EXISTS 'read_sucursal2'@'%' IDENTIFIED WITH mysql_native_password BY 'clave123';
+GRANT SELECT ON banco.* TO 'read_sucursal2'@'%';
+
+CREATE USER IF NOT EXISTS 'read_sucursal3'@'%' IDENTIFIED WITH mysql_native_password BY 'clave123';
+GRANT SELECT ON banco.* TO 'read_sucursal3'@'%';
+
+CREATE USER IF NOT EXISTS 'read_credit'@'%' IDENTIFIED WITH mysql_native_password BY 'clave123';
+GRANT SELECT ON banco.* TO 'read_credit'@'%';
+
+CREATE USER IF NOT EXISTS 'read_mercadeo'@'%' IDENTIFIED WITH mysql_native_password BY 'clave123';
+GRANT SELECT ON banco.* TO 'read_mercadeo'@'%';
+
+-- Aplicar cambios
 FLUSH PRIVILEGES;

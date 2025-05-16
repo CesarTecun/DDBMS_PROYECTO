@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS cliente_campana (
     FOREIGN KEY (campana_id) REFERENCES campana(id)
 );
 
--- Crear usuario técnico para ProxySQL
-CREATE USER IF NOT EXISTS 'flask_user'@'%' IDENTIFIED BY 'flask_pass';
-GRANT ALL PRIVILEGES ON *.* TO 'flask_user'@'%';
+-- Usuario de lectura/escritura para ProxySQL o Flask
+CREATE USER IF NOT EXISTS 'read_mercadeo'@'%' IDENTIFIED WITH mysql_native_password BY 'clave123';
+GRANT SELECT, INSERT, UPDATE ON banco.* TO 'read_mercadeo'@'%';
+
 FLUSH PRIVILEGES;

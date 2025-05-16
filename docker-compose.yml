@@ -39,11 +39,14 @@ services:
     volumes:
       - ./docker/mysql_sucursal1/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_sucursal1/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql_sucursal1/replicacion.sh:/docker-entrypoint-initdb.d/replicacion.sh
       - mysql_sucursal1_data:/var/lib/mysql
+    entrypoint: ["bash", "/docker-entrypoint-initdb.d/replicacion.sh"]
     depends_on:
       - mysql_master
     networks:
       - banco_net
+
 
   mysql_sucursal2:
     image: mysql:8.0
@@ -56,11 +59,14 @@ services:
     volumes:
       - ./docker/mysql_sucursal2/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_sucursal2/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql_sucursal2/replicacion.sh:/docker-entrypoint-initdb.d/replicacion.sh
       - mysql_sucursal2_data:/var/lib/mysql
+    entrypoint: ["bash", "/docker-entrypoint-initdb.d/replicacion.sh"]
     depends_on:
       - mysql_master
     networks:
       - banco_net
+
 
   mysql_sucursal3:
     image: mysql:8.0
@@ -73,11 +79,14 @@ services:
     volumes:
       - ./docker/mysql_sucursal3/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./docker/mysql_sucursal3/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql_sucursal3/replicacion.sh:/docker-entrypoint-initdb.d/replicacion.sh
       - mysql_sucursal3_data:/var/lib/mysql
+    entrypoint: ["bash", "/docker-entrypoint-initdb.d/replicacion.sh"]
     depends_on:
       - mysql_master
     networks:
       - banco_net
+
 
   mysql_credit:
     image: mysql:8.0

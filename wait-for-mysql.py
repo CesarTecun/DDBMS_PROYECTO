@@ -2,35 +2,38 @@ import time
 import mysql.connector
 from mysql.connector import Error
 
+# Verificamos conexión a través de ProxySQL con los usuarios por rol
 SERVIDORES = [
-    {"name": "sucursal1", "host": "mysql_sucursal1", "port": 3306, "database": "banco"},
-    {"name": "master", "host": "mysql_master", "port": 3306, "database": "banco"},
-    {"name": "credit", "host": "mysql_credit", "port": 3306, "database": "banco"},
-    {"name": "mercadeo", "host": "mysql_mercadeo", "port": 3306, "database": "banco"}
+    {"name": "sucursal1", "user": "read_sucursal1", "password": "clave123"},
+    {"name": "sucursal2", "user": "read_sucursal2", "password": "clave123"},
+    {"name": "sucursal3", "user": "read_sucursal3", "password": "clave123"},
+    {"name": "credit",    "user": "read_credit",    "password": "clave123"},
+    {"name": "mercadeo",  "user": "read_mercadeo",  "password": "clave123"},
+    {"name": "master",    "user": "admin_user",     "password": "clave123"}
 ]
 
 for servidor in SERVIDORES:
-    print(f"Esperando MySQL de {servidor['name']} en {servidor['host']}:{servidor['port']}...")
+    print(f"Conectando a {servidor['name']} vía ProxySQL...")
 
     intentos = 0
     while intentos < 20:
         try:
             conn = mysql.connector.connect(
-                host=servidor["host"],
-                port=servidor["port"],
-                user="root",
-                password="root",
-                database=servidor["database"]
+                host="proxysql",
+                port=6033,
+                user=servidor["user"],
+                password=servidor["password"],
+                database="banco"
             )
             if conn.is_connected():
-                print(f" {servidor['name']} listo.")
+                print(f"✅ {servidor['name']} listo.")
                 break
         except Error:
             print(f"⏳ {servidor['name']} no disponible aún. Reintentando...")
             time.sleep(3)
             intentos += 1
     else:
-        print(f"Error: {servidor['name']} no respondió tras 20 intentos.")
+        print(f"❌ Error: {servidor['name']} no respondió tras 20 intentos.")
         exit(1)
 
-print("Todos los servidores listos. Lanzando Flask...")
+print("🎉 Todos los servidores accesibles vía ProxySQL. Lanzando Flask...")
