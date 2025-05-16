@@ -341,9 +341,12 @@ def gestionar_tarjetas():
     mensaje = ""
     tarjeta_generada = None
     dpi_enviado = request.form.get("dpi") if request.method == "POST" else None
-    conn_credit = connections["credit"].connect()
+    tarjetas = []  # Initialize here to ensure it always exists
+    conn_credit = None
 
     try:
+        conn_credit = connections["credit"].connect()
+
         if request.method == "POST":
             if "actualizar_estado" in request.form:
                 tarjeta_id = request.form.get("id")
@@ -394,7 +397,6 @@ def gestionar_tarjetas():
                             "telefono": telefono
                         }
 
-
             elif "asociar" in request.form:
                 dpi = request.form["dpi"]
                 numero_tarjeta = request.form["numero_tarjeta"]
@@ -421,14 +423,13 @@ def gestionar_tarjetas():
                     result = conn_credit.execute(text("""
                         INSERT INTO tarjetas (numero_tarjeta, cvv, fecha_expiracion, limite_credito, saldo_actual)
                         VALUES (:numero, :cvv, :fecha, :limite, :limite)
-                        RETURNING id
                     """), {
                         "numero": numero_tarjeta,
                         "cvv": cvv,
                         "fecha": fecha_expiracion,
                         "limite": limite
                     })
-                    tarjeta_id = result.fetchone()[0]
+                    tarjeta_id = result.lastrowid
 
                     conn_credit.execute(text("""
                         INSERT INTO cliente_tarjeta (cliente_id, tarjeta_id)
@@ -477,8 +478,10 @@ def gestionar_tarjetas():
 
     except Exception as e:
         mensaje = f"❌ Error: {e}"
+    finally:
+        if conn_credit:
+            conn_credit.close()
 
-    conn_credit.close()
     return render_template(
         "gestionar_tarjetas.html",
         tarjetas=tarjetas,
