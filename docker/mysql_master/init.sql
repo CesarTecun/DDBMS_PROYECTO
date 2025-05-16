@@ -14,3 +14,8 @@ INSERT INTO clientes (nombre, correo) VALUES ('Juan', 'juan@banco.com');
 CREATE USER IF NOT EXISTS 'replica'@'%' IDENTIFIED WITH mysql_native_password BY 'replica123';
 GRANT REPLICATION SLAVE ON *.* TO 'replica'@'%';
 FLUSH PRIVILEGES;
+
+-- Crear usuario técnico para ProxySQL
+CREATE USER IF NOT EXISTS 'flask_user'@'%' IDENTIFIED BY 'flask_pass';
+GRANT ALL PRIVILEGES ON *.* TO 'flask_user'@'%';
+FLUSH PRIVILEGES;

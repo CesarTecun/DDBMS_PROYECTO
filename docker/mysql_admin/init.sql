@@ -17,3 +17,8 @@ INSERT INTO usuarios (username, password, rol, sucursal) VALUES
 ('cajero_s3', 'clave3', 'sucursal', 'sucursal3'),
 ('tarjetas1', 'tarjeta456', 'credit', 'creditos'),
 ('marketing1', 'mk2024', 'mercadeo', 'mercadeo');
+
+-- Crear usuario técnico para ProxySQL
+CREATE USER IF NOT EXISTS 'flask_user'@'%' IDENTIFIED BY 'flask_pass';
+GRANT ALL PRIVILEGES ON *.* TO 'flask_user'@'%';
+FLUSH PRIVILEGES;

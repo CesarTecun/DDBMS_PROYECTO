@@ -128,6 +128,20 @@ services:
     networks:
       - banco_net
 
+  proxysql:
+    image: proxysql/proxysql
+    container_name: proxysql
+    ports:
+      - "6032:6032"   # Panel de administración
+      - "6033:6033"   # Entrada de tráfico SQL
+    volumes:
+      - ./proxysql/proxysql.cnf:/etc/proxysql.cnf
+    depends_on:
+      - mysql_sucursal1
+      - mysql_credit
+    networks:
+      - banco_net
+
 networks:
   banco_net:
     driver: bridge

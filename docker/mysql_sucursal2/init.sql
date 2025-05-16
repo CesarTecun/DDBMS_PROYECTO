@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS banco;
 USE banco;
 
--- Tabla de clientes
+-- Tabla de clientes (con columna sucursal incluida)
 CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre_completo VARCHAR(100) NOT NULL,
@@ -12,10 +12,11 @@ CREATE TABLE IF NOT EXISTS clientes (
     direccion TEXT,
     municipio VARCHAR(50),
     departamento VARCHAR(50),
+    sucursal VARCHAR(50),  -- <- Agregado aquí
     fecha_registro DATE DEFAULT (CURRENT_DATE)
 );
 
--- Tabla de cuentas (numero_cuenta ahora soporta UUID completo)
+-- Tabla de cuentas
 CREATE TABLE IF NOT EXISTS cuentas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cliente_id INT NOT NULL,
@@ -37,3 +38,8 @@ CREATE TABLE IF NOT EXISTS transacciones (
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (cuenta_id) REFERENCES cuentas(id)
 );
+
+-- Usuario técnico para ProxySQL
+CREATE USER IF NOT EXISTS 'flask_user'@'%' IDENTIFIED BY 'flask_pass';
+GRANT ALL PRIVILEGES ON *.* TO 'flask_user'@'%';
+FLUSH PRIVILEGES;

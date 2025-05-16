@@ -18,3 +18,8 @@ CREATE TABLE IF NOT EXISTS cliente_tarjeta (
     fecha_asignacion DATE DEFAULT (CURRENT_DATE),
     FOREIGN KEY (tarjeta_id) REFERENCES tarjetas(id)
 );
+
+-- Crear usuario técnico para ProxySQL
+CREATE USER IF NOT EXISTS 'flask_user'@'%' IDENTIFIED BY 'flask_pass';
+GRANT ALL PRIVILEGES ON *.* TO 'flask_user'@'%';
+FLUSH PRIVILEGES;
