@@ -34,17 +34,6 @@ def campanas():
         rows = [dict(row._mapping) for row in result]
     return jsonify(rows)
 
-@app.route("/ping_credit")
-def ping_credit():
-    try:
-        engine = create_engine("mysql+pymysql://flask_user:flask_pass@mysql_credit:3306/creditos")
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        return jsonify({"status": "OK"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
