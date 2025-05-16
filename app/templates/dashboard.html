@@ -1,43 +1,38 @@
 {% extends "layout.html" %}
+
 {% block content %}
 <h2 class="mb-4">Panel de Usuario</h2>
 
-{% if session.get('rol') == 'admin' %}
 <form method="get" action="/dashboard" class="mb-4">
-    <label for="rol" class="form-label">Selecciona tipo de usuario:</label>
+    <label for="rol" class="form-label">Sucursal / Rol</label>
+    <select name="rol" id="rol" class="form-select w-50"
+        {% if rol_usuario != 'admin' %}disabled{% endif %}
+        onchange="this.form.submit()">
 
-    {% if session.get('rol') == 'credit' %}
-        <!-- Usuario tarjetas1: solo puede ver la opción Tarjetas de Crédito, ya seleccionada -->
-        <select name="rol" id="rol" class="form-select w-50" disabled>
-            <option value="credit" selected>Tarjetas de Crédito</option>
-        </select>
-        <input type="hidden" name="rol" value="credit">
-    {% else %}
-        <!-- Otros usuarios -->
-        <select name="rol" id="rol" class="form-select w-50" onchange="this.form.submit()">
-            <option value="">-- Selecciona un rol --</option>
-            <option value="sucursal1" {% if rol == 'sucursal1' %}selected{% endif %}>Sucursal 1</option>
-            <option value="sucursal2" {% if rol == 'sucursal2' %}selected{% endif %}>Sucursal 2</option>
-            <option value="sucursal3" {% if rol == 'sucursal3' %}selected{% endif %}>Sucursal 3</option>
+        <option value="">-- Selecciona un rol --</option>
+        {% for codigo, nombre in sucursales_disponibles %}
+            <option value="{{ codigo }}" {% if sucursal_actual == codigo %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+    </select>
 
-            {% if session.get("rol") in ['admin', 'credit'] %}
-            <option value="credit" {% if rol == 'credit' %}selected{% endif %}>Tarjetas de Crédito</option>
-            {% endif %}
-
-            {% if session.get("rol") in ['admin', 'mercadeo'] %}
-            <option value="mercadeo" {% if rol == 'mercadeo' %}selected{% endif %}>Mercadeo</option>
-            {% endif %}
-
-            {% if session.get("rol") == 'admin' %}
-            <option value="admin" {% if rol == 'admin' %}selected{% endif %}>Administrador</option>
-            {% endif %}
-        </select>
+    {% if rol_usuario != 'admin' %}
+        <!-- Campo oculto para enviar el valor correcto si el select está deshabilitado -->
+        <input type="hidden" name="rol" value="{{ sucursal_actual }}">
     {% endif %}
 </form>
-{% endif %}
 
-{% if rol and datos %}
-    <h4>Datos de: {{ rol|capitalize }}</h4>
+{# Mostrar el nombre bonito de la sucursal actual #}
+{% set nombre_mostrar = {
+    "sucursal1": "Sucursal 1",
+    "sucursal2": "Sucursal 2",
+    "sucursal3": "Sucursal 3",
+    "credit": "Tarjetas de Crédito",
+    "mercadeo": "Mercadeo",
+    "admin": "Administrador"
+}[sucursal_actual] %}
+
+{% if sucursal_actual and datos %}
+    <h4>Datos de: {{ nombre_mostrar }}</h4>
     <div class="table-responsive">
         <table class="table table-bordered table-hover">
             <thead class="table-dark text-center">
@@ -54,9 +49,9 @@
                             <td>
                                 {% if key == "numero_cuenta" %}
                                     {% if valor %}
-                                        <a href="/cuenta/{{ rol }}/{{ valor }}" class="text-primary">{{ valor }}</a>
+                                        <a href="/cuenta/{{ sucursal_actual }}/{{ valor }}" class="text-primary">{{ valor }}</a>
                                     {% else %}
-                                        <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ rol }}" class="btn btn-sm btn-success">Crear cuenta</a>
+                                        <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ sucursal_actual }}" class="btn btn-sm btn-success">Crear cuenta</a>
                                     {% endif %}
                                 {% else %}
                                     {{ valor if valor is not none else "—" }}
@@ -68,7 +63,7 @@
             </tbody>
         </table>
     </div>
-{% elif rol %}
-    <div class="alert alert-warning">No hay datos disponibles para este rol.</div>
+{% elif sucursal_actual %}
+    <div class="alert alert-warning">No hay datos disponibles para esta sucursal o rol.</div>
 {% endif %}
 {% endblock %}

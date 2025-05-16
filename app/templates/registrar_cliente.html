@@ -5,32 +5,52 @@
 <h2 class="mb-4">Registro de Cliente</h2>
 
 <form method="POST" action="/clientes/registrar">
-    <div class="mb-3">
-        <label for="sucursal" class="form-label">Sucursal</label>
-        <select class="form-select" name="sucursal" id="sucursal" required 
-            {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}disabled{% endif %}>
-            {% if session.get('rol') == 'sucursal' %}
-                <option value="{{ session.get('sucursal') }}" selected>
-                    {{ session.get('sucursal')|replace('sucursal', 'Sucursal ') }}
-                </option>
-            {% elif session.get('rol') == 'credit' %}
-                <option value="creditos" selected>Créditos</option>
-            {% elif session.get('rol') == 'mercadeo' %}
-                <option value="mercadeo" selected>Mercadeo</option>
-            {% else %}
-                <option value="">-- Seleccione una sucursal --</option>
-                <option value="sucursal1">Sucursal 1</option>
-                <option value="sucursal2">Sucursal 2</option>
-                <option value="sucursal3">Sucursal 3</option>
-                <option value="creditos">Créditos</option>
-                <option value="mercadeo">Mercadeo</option>
-            {% endif %}
-        </select>
-        <!-- Campo oculto para enviar el valor cuando el select está deshabilitado -->
-        {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}
-        <input type="hidden" name="sucursal" value="{% if session.get('rol') == 'sucursal' %}{{ session.get('sucursal') }}{% elif session.get('rol') == 'credit' %}creditos{% else %}mercadeo{% endif %}">
+<div class="mb-3">
+    <label for="sucursal" class="form-label">Sucursal</label>
+    <select class="form-select" name="sucursal_display" id="sucursal" required 
+        {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}disabled{% endif %}>
+        
+        {% if session.get('rol') == 'sucursal' %}
+            <option value="{{ session.get('sucursal') }}" selected>
+                {{ session.get('sucursal')|replace('sucursal', 'Sucursal ') }}
+            </option>
+        {% elif session.get('rol') == 'credit' %}
+            <option value="creditos" selected>Créditos</option>
+        {% elif session.get('rol') == 'mercadeo' %}
+            <option value="mercadeo" selected>Mercadeo</option>
+        {% else %}
+            <option value="">-- Seleccione una sucursal --</option>
+            <option value="sucursal1">Sucursal 1</option>
+            <option value="sucursal2">Sucursal 2</option>
+            <option value="sucursal3">Sucursal 3</option>
+            <option value="creditos">Créditos</option>
+            <option value="mercadeo">Mercadeo</option>
         {% endif %}
-    </div>
+    </select>
+
+    {# Campo oculto que envía el valor correcto de la sucursal si el select está deshabilitado #}
+    {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}
+        <input type="hidden" name="sucursal" value="{% if session.get('rol') == 'sucursal' %}{{ session.get('sucursal') }}{% elif session.get('rol') == 'credit' %}creditos{% elif session.get('rol') == 'mercadeo' %}mercadeo{% endif %}">
+    {% else %}
+        {# Si el select está habilitado, asegúrate que el campo enviado sea 'sucursal' #}
+        <script>
+            // sincroniza el valor seleccionado al name real
+            document.addEventListener("DOMContentLoaded", function () {
+                const select = document.getElementById("sucursal");
+                const inputHidden = document.createElement("input");
+                inputHidden.type = "hidden";
+                inputHidden.name = "sucursal";
+                inputHidden.value = select.value;
+                select.form.appendChild(inputHidden);
+
+                select.addEventListener("change", function () {
+                    inputHidden.value = select.value;
+                });
+            });
+        </script>
+    {% endif %}
+</div>
+
 
     <div class="mb-3">
         <label for="nombre_completo" class="form-label">Nombre completo</label>

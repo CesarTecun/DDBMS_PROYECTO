@@ -44,25 +44,29 @@ def test_conexiones():
             estados[nombre] = f"Error: {str(e)}"
     return jsonify(estados)
 
-from flask import render_template, request  # ya tienes jsonify, agrega estos
 
 @ddbms_bp.route('/dashboard', methods=['GET'])
 def dashboard():
     if not session.get("autenticado"):
         return redirect("/login")
-    if session.get("rol") == "admin":
-        rol = request.args.get("rol")
-    elif session.get("rol") == "credit":
-        rol = "credit"
+
+    rol_usuario = session.get("rol")
+    sucursal_actual = ""
+
+    if rol_usuario == "admin":
+        sucursal_actual = request.args.get("rol") or "sucursal1"
+    elif rol_usuario in ["credit", "mercadeo"]:
+        sucursal_actual = rol_usuario
     else:
-        rol = session.get("sucursal")
+        sucursal_actual = session.get("sucursal")
+
     datos = []
 
-    if rol in connections:
+    if sucursal_actual in connections:
         try:
-            conn = connections[rol].connect()
-            if 'sucursal' in rol:
-                # Mostrar clientes con sus cuentas
+            conn = connections[sucursal_actual].connect()
+
+            if "sucursal" in sucursal_actual:
                 result = conn.execute(text("""
                     SELECT 
                         c.id AS cliente_id,
@@ -76,9 +80,9 @@ def dashboard():
                     FROM clientes c
                     LEFT JOIN cuentas cu ON c.id = cu.cliente_id
                 """))
-            elif rol == 'credit':
+            elif sucursal_actual == 'credit':
                 result = conn.execute(text("SELECT * FROM tarjetas"))
-            elif rol == 'mercadeo':
+            elif sucursal_actual == 'mercadeo':
                 result = conn.execute(text("SELECT * FROM campana"))
             else:
                 result = []
@@ -86,9 +90,26 @@ def dashboard():
             datos = [dict(r._mapping) for r in result]
             conn.close()
         except Exception as e:
-            print(f"[ERROR] {rol}: {e}")
+            print(f"[ERROR] {sucursal_actual}: {e}")
 
-    return render_template("dashboard.html", rol=rol, datos=datos)
+    sucursales_disponibles = [
+        ("sucursal1", "Sucursal 1"),
+        ("sucursal2", "Sucursal 2"),
+        ("sucursal3", "Sucursal 3"),
+        ("credit", "Tarjetas de Crédito"),
+        ("mercadeo", "Mercadeo"),
+        ("admin", "Administrador")
+    ]
+
+    return render_template(
+        "dashboard.html",
+        datos=datos,
+        sucursal_actual=sucursal_actual,
+        rol_usuario=rol_usuario,
+        sucursales_disponibles=sucursales_disponibles
+    )
+
+
 
 @ddbms_bp.route("/cuenta/<sucursal>/<numero_cuenta>")
 def ver_transacciones(sucursal, numero_cuenta):
@@ -222,16 +243,18 @@ def crear_cuenta():
 
                 conn.execute(
                     text("""
-                        INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo)
-                        VALUES (:cliente_id, :numero_cuenta, :tipo, :saldo)
+                        INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo, sucursal)
+                        VALUES (:cliente_id, :numero_cuenta, :tipo, :saldo, :sucursal)
                     """),
                     {
                         "cliente_id": cliente_id,
                         "numero_cuenta": numero_cuenta,
                         "tipo": tipo,
-                        "saldo": saldo
+                        "saldo": saldo,
+                        "sucursal": sucursal
                     }
                 )
+
                 conn.commit()
                 mensaje = f"✅ Cuenta creada: {numero_cuenta}"
             conn.close()
