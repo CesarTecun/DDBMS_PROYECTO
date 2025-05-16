@@ -27,14 +27,14 @@ DBS = {
         'port': 3306,
         'user': 'root',
         'password': 'root',
-        'database': 'creditos'
+        'database': 'banco'
     },
     'mercadeo': {
         'host': 'mysql_mercadeo',
         'port': 3306,
         'user': 'root',
         'password': 'root',
-        'database': 'mercadeo'
+        'database': 'banco'
     },
     'master': {
         'host': 'mysql_master',

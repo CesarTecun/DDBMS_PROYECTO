@@ -79,7 +79,7 @@ def dashboard():
             elif rol == 'credit':
                 result = conn.execute(text("SELECT * FROM tarjetas"))
             elif rol == 'mercadeo':
-                result = conn.execute(text("SELECT * FROM campañas"))
+                result = conn.execute(text("SELECT * FROM campana"))
             else:
                 result = []
 

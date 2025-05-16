@@ -5,8 +5,8 @@ from mysql.connector import Error
 SERVIDORES = [
     {"name": "sucursal1", "host": "mysql_sucursal1", "port": 3306, "database": "banco"},
     {"name": "master", "host": "mysql_master", "port": 3306, "database": "banco"},
-    {"name": "credit", "host": "mysql_credit", "port": 3306, "database": "creditos"},
-    {"name": "mercadeo", "host": "mysql_mercadeo", "port": 3306, "database": "mercadeo"}
+    {"name": "credit", "host": "mysql_credit", "port": 3306, "database": "banco"},
+    {"name": "mercadeo", "host": "mysql_mercadeo", "port": 3306, "database": "banco"}
 ]
 
 for servidor in SERVIDORES:

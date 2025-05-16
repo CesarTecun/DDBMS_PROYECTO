@@ -1,7 +1,7 @@
-CREATE DATABASE IF NOT EXISTS mercadeo;
-USE mercadeo;
+CREATE DATABASE IF NOT EXISTS banco;
+USE banco;
 
-CREATE TABLE IF NOT EXISTS campañas (
+CREATE TABLE IF NOT EXISTS campana (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT,
@@ -10,14 +10,14 @@ CREATE TABLE IF NOT EXISTS campañas (
     fecha_fin DATE NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS cliente_campaña (
+CREATE TABLE IF NOT EXISTS cliente_campana (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cliente_id INT NOT NULL,
-    campaña_id INT NOT NULL,
+    campana_id INT NOT NULL,
     resultado ENUM('POSITIVO', 'NEUTRO', 'NEGATIVO') DEFAULT 'NEUTRO',
     observaciones TEXT,
     fecha_asignacion DATE DEFAULT (CURRENT_DATE),
-    FOREIGN KEY (campaña_id) REFERENCES campañas(id)
+    FOREIGN KEY (campana_id) REFERENCES campana(id)
 );
 
 -- Crear usuario técnico para ProxySQL

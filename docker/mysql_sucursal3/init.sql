@@ -43,3 +43,7 @@ CREATE TABLE IF NOT EXISTS transacciones (
 CREATE USER IF NOT EXISTS 'flask_user'@'%' IDENTIFIED BY 'flask_pass';
 GRANT ALL PRIVILEGES ON *.* TO 'flask_user'@'%';
 FLUSH PRIVILEGES;
+CREATE USER IF NOT EXISTS 'monitor'@'%' IDENTIFIED BY 'monitorpass';
+GRANT USAGE ON *.* TO 'monitor'@'%';
+FLUSH PRIVILEGES;
+

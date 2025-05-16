@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
     rol ENUM('admin', 'sucursal', 'credit', 'mercadeo', 'transacciones') NOT NULL,
-    sucursal ENUM('sucursal1', 'sucursal2', 'sucursal3', 'creditos', 'mercadeo') DEFAULT NULL,
+    sucursal ENUM('sucursal1', 'sucursal2', 'sucursal3', 'credit', 'mercadeo') DEFAULT NULL,
     activo BOOLEAN DEFAULT TRUE
 );
 
@@ -15,7 +15,7 @@ INSERT INTO usuarios (username, password, rol, sucursal) VALUES
 ('cajero_s1', 'clave1', 'sucursal', 'sucursal1'),
 ('cajero_s2', 'clave2', 'sucursal', 'sucursal2'),
 ('cajero_s3', 'clave3', 'sucursal', 'sucursal3'),
-('tarjetas1', 'tarjeta456', 'credit', 'creditos'),
+('tarjetas1', 'tarjeta456', 'credit', 'credit'),
 ('marketing1', 'mk2024', 'mercadeo', 'mercadeo');
 
 -- Crear usuario técnico para ProxySQL
