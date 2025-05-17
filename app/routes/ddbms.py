@@ -12,6 +12,10 @@ from app.utils_ddbms import (
     buscar_cliente_por_dpi,
     generar_datos_tarjeta,
     asociar_tarjeta,
+    buscar_cuenta,
+    validar_saldo,
+    registrar_transaccion,
+    actualizar_saldo,
     contar_tarjetas_cliente,
     obtener_telefono_tarjeta
 )
@@ -287,77 +291,61 @@ def generar_numero_cuenta(codigo_banco, tipo):
 @ddbms_bp.route("/acciones/transferencia", methods=["GET", "POST"])
 def transferencia():
     mensaje = ""
+
     if request.method == "POST":
         try:
             origen_sucursal = request.form["origen_sucursal"]
             destino_sucursal = request.form["destino_sucursal"]
             cuenta_origen = request.form["cuenta_origen"]
             cuenta_destino = request.form["cuenta_destino"]
-            monto = float(request.form["monto"])
 
-            conn_origen = connections[origen_sucursal].connect()
-            conn_destino = connections[destino_sucursal].connect()
+            # Validar monto
+            try:
+                monto = float(request.form["monto"])
+                if monto <= 0:
+                    raise ValueError
+            except ValueError:
+                return render_template("transferencia.html", mensaje="❌ El monto debe ser un número positivo.")
 
-            # Buscar cuenta origen y validar saldo
-            origen = conn_origen.execute(
-                text("SELECT id, saldo FROM cuentas WHERE numero_cuenta = :num"),
-                {"num": cuenta_origen}
-            ).fetchone()
+            if cuenta_origen == cuenta_destino and origen_sucursal == destino_sucursal:
+                return render_template("transferencia.html", mensaje="❌ Las cuentas origen y destino no pueden ser iguales.")
 
-            if origen is None:
-                mensaje = "Cuenta origen no encontrada."
-            elif origen[1] < monto:
-                mensaje = "Saldo insuficiente en la cuenta origen."
+            # Conexiones SOLO DE LECTURA para validar cuentas
+            conn_origen_read = connections[origen_sucursal].connect()
+            conn_destino_read = connections[destino_sucursal].connect()
+
+            origen = buscar_cuenta(conn_origen_read, cuenta_origen)
+            destino = buscar_cuenta(conn_destino_read, cuenta_destino)
+
+            conn_origen_read.close()
+            conn_destino_read.close()
+
+            if not origen:
+                mensaje = "❌ Cuenta origen no encontrada."
+            elif not destino:
+                mensaje = "❌ Cuenta destino no encontrada."
+            elif not validar_saldo(origen, monto):
+                mensaje = "❌ Saldo insuficiente en la cuenta origen."
             else:
-                # Buscar cuenta destino
-                destino = conn_destino.execute(
-                    text("SELECT id FROM cuentas WHERE numero_cuenta = :num"),
-                    {"num": cuenta_destino}
-                ).fetchone()
+                # Usamos conexión MASTER para las escrituras
+                conn_master = connections["master"].connect()
 
-                if destino is None:
-                    mensaje = "Cuenta destino no encontrada."
-                else:
-                    origen_id = origen[0]
-                    destino_id = destino[0]
+                registrar_transaccion(conn_master, origen[0], monto, f"A {cuenta_destino}")
+                actualizar_saldo(conn_master, origen[0], monto, '-')
 
-                    # Descontar de cuenta origen
-                    conn_origen.execute(
-                        text("""
-                            INSERT INTO transacciones (cuenta_id, tipo, monto, descripcion)
-                            VALUES (:id, 'TRANSFERENCIA', :monto, :desc)
-                        """),
-                        {"id": origen_id, "monto": monto, "desc": f"A {cuenta_destino}"}
-                    )
-                    conn_origen.execute(
-                        text("UPDATE cuentas SET saldo = saldo - :monto WHERE id = :id"),
-                        {"monto": monto, "id": origen_id}
-                    )
+                registrar_transaccion(conn_master, destino[0], monto, f"De {cuenta_origen}")
+                actualizar_saldo(conn_master, destino[0], monto, '+')
 
-                    # Abonar en cuenta destino
-                    conn_destino.execute(
-                        text("""
-                            INSERT INTO transacciones (cuenta_id, tipo, monto, descripcion)
-                            VALUES (:id, 'TRANSFERENCIA', :monto, :desc)
-                        """),
-                        {"id": destino_id, "monto": monto, "desc": f"De {cuenta_origen}"}
-                    )
-                    conn_destino.execute(
-                        text("UPDATE cuentas SET saldo = saldo + :monto WHERE id = :id"),
-                        {"monto": monto, "id": destino_id}
-                    )
+                conn_master.commit()
+                conn_master.close()
 
-                    conn_origen.commit()
-                    conn_destino.commit()
-                    mensaje = "Transferencia completada exitosamente."
-
-            conn_origen.close()
-            conn_destino.close()
+                mensaje = "✅ Transferencia completada exitosamente."
 
         except Exception as e:
-            mensaje = f"Error: {e}"
+            mensaje = f"❌ Error: {e}"
 
     return render_template("transferencia.html", mensaje=mensaje)
+
 
 
 

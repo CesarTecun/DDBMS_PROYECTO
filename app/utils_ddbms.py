@@ -17,15 +17,16 @@ def obtener_clientes_todas_sucursales(conexiones):
                 c.id AS cliente_id,
                 c.nombre_completo,
                 c.documento_identidad,
-                c.sucursal AS sucursal,  -- ← ahora obtenemos la sucursal real del cliente
-                NULL AS numero_cuenta,
-                NULL AS tipo,
-                NULL AS estado,
-                NULL AS saldo,
-                NULL AS fecha_apertura
+                c.sucursal AS sucursal,
+                cu.numero_cuenta,
+                cu.tipo,
+                cu.estado,
+                cu.saldo,
+                cu.fecha_apertura
             FROM clientes c
+            LEFT JOIN cuentas cu ON c.id = cu.cliente_id
         """))
-        
+
         for r in result:
             cliente = dict(r._mapping)
             dpi = cliente["documento_identidad"]
@@ -36,7 +37,9 @@ def obtener_clientes_todas_sucursales(conexiones):
                 clientes.append(cliente)
 
         conn.close()
+
     return clientes
+
 
 # tarjetas_utils.py
 from sqlalchemy import text
@@ -118,3 +121,28 @@ def obtener_telefono_tarjeta(tarjeta_id, conexiones):
         if telefono:
             return telefono[0]
     return None
+
+def buscar_cuenta(conn, numero_cuenta):
+    return conn.execute(
+        text("SELECT id, saldo FROM cuentas WHERE numero_cuenta = :num"),
+        {"num": numero_cuenta}
+    ).fetchone()
+
+def validar_saldo(cuenta, monto):
+    return cuenta and cuenta[1] >= monto
+
+def registrar_transaccion(conn, cuenta_id, monto, descripcion):
+    conn.execute(
+        text("""
+            INSERT INTO transacciones (cuenta_id, tipo, monto, descripcion)
+            VALUES (:id, 'TRANSFERENCIA', :monto, :desc)
+        """),
+        {"id": cuenta_id, "monto": monto, "desc": descripcion}
+    )
+
+def actualizar_saldo(conn, cuenta_id, monto, operacion='+'):
+    operador = '+' if operacion == '+' else '-'
+    conn.execute(
+        text(f"UPDATE cuentas SET saldo = saldo {operador} :monto WHERE id = :id"),
+        {"monto": monto, "id": cuenta_id}
+    )
