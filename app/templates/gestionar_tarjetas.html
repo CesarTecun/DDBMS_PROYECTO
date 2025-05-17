@@ -9,13 +9,20 @@
         <!-- Formulario para ingresar DPI y generar tarjeta -->
         <form method="POST" class="row g-3 mb-4">
             <div class="col-md-3">
-                <label class="form-label">DPI del cliente</label>
-                <input type="text" class="form-control" name="dpi" maxlength="13" required value="{{ dpi or '' }}">
-                    {% if dpi and tarjetas_cliente is not none %}
-                    <div class="alert alert-info tarjeta-slide">
-                        💳 Este cliente ya tiene <strong>{{ tarjetas_cliente }}</strong> tarjeta(s) registradas.
-                    </div>
-                    {% endif %}
+                <label class="form-label">Cliente</label>
+                <select class="form-select" name="dpi" required>
+                    <option value="">Seleccione un cliente...</option>
+                    {% for cliente in clientes_list %}
+                        <option value="{{ cliente.documento_identidad }}" {% if dpi == cliente.documento_identidad %}selected{% endif %}>
+                            {{ cliente.nombre_completo }} ({{ cliente.documento_identidad }}) - {{ cliente.sucursal }}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if dpi and tarjetas_cliente is not none %}
+                <div class="alert alert-info tarjeta-slide">
+                    💳 Este cliente ya tiene <strong>{{ tarjetas_cliente }}</strong> tarjeta(s) registradas.
+                </div>
+                {% endif %}
             </div>
 
             {% if tarjeta_generada %}

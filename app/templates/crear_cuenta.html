@@ -1,56 +1,71 @@
-{# templates/crear_cuenta.html #}
 {% extends "layout.html" %}
 
 {% block content %}
-<h2 class="mb-4">Crear Cuenta para Cliente</h2>
+<div class="container py-4" style="background-color: #f8f9fa; min-height: 100vh;">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm p-4 border-0">
+                <h4 class="fw-bold mb-4 text-center">Crear Cuenta para Cliente</h4>
 
-<form method="POST" action="/acciones/crear-cuenta">
-    <div class="mb-3">
-        <label for="sucursal" class="form-label">Sucursal</label>
+                <form method="POST" action="/acciones/crear-cuenta">
+                    
+                    <!-- Sucursal -->
+                    <div class="mb-3">
+                        <label for="sucursal" class="form-label fw-semibold">Sucursal</label>
 
-        {% if session.get('rol') == 'admin' %}
-            <select class="form-select" name="sucursal" required>
-                <option value="sucursal1" {% if sucursal == 'sucursal1' %}selected{% endif %}>Sucursal 1</option>
-                <option value="sucursal2" {% if sucursal == 'sucursal2' %}selected{% endif %}>Sucursal 2</option>
-                <option value="sucursal3" {% if sucursal == 'sucursal3' %}selected{% endif %}>Sucursal 3</option>
-            </select>
-        {% else %}
-            <input type="text" class="form-control" value="{{ sucursal|replace('sucursal', 'Sucursal ') }}" disabled>
-            <input type="hidden" name="sucursal" value="{{ sucursal }}">
-        {% endif %}
+                        {% if session.get('rol') == 'admin' %}
+                            <select class="form-select" name="sucursal" required>
+                                <option value="sucursal1" {% if sucursal == 'sucursal1' %}selected{% endif %}>Sucursal 1</option>
+                                <option value="sucursal2" {% if sucursal == 'sucursal2' %}selected{% endif %}>Sucursal 2</option>
+                                <option value="sucursal3" {% if sucursal == 'sucursal3' %}selected{% endif %}>Sucursal 3</option>
+                            </select>
+                        {% else %}
+                            <input type="text" class="form-control" value="{{ sucursal|replace('sucursal', 'Sucursal ') }}" disabled>
+                            <input type="hidden" name="sucursal" value="{{ sucursal }}">
+                        {% endif %}
+                    </div>
+
+                    <!-- Cliente -->
+                    <div class="mb-3">
+                        <label for="cliente_id" class="form-label fw-semibold">Cliente</label>
+                        <select class="form-select" name="cliente_id" required>
+                            <option value="">-- Selecciona un cliente --</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">
+                                {{ cliente.nombre_completo }} - {{ cliente.documento_identidad }} - Sucursal: {{ cliente.sucursal }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Tipo de Cuenta -->
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label fw-semibold">Tipo de Cuenta</label>
+                        <select class="form-select" name="tipo" required>
+                            <option value="">-- Selecciona un tipo --</option>
+                            <option value="AHORRO">Ahorro</option>
+                            <option value="CORRIENTE">Corriente</option>
+                            <option value="PLAZO">Plazo</option>
+                        </select>
+                    </div>
+
+                    <!-- Saldo Inicial -->
+                    <div class="mb-3">
+                        <label for="saldo" class="form-label fw-semibold">Saldo Inicial</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="saldo" value="0.00" required>
+                    </div>
+
+                    <!-- Botón -->
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary px-4">Crear Cuenta</button>
+                    </div>
+                </form>
+
+                {% if mensaje %}
+                    <div class="alert alert-info mt-4">{{ mensaje }}</div>
+                {% endif %}
+            </div>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label for="cliente_id" class="form-label">Cliente</label>
-        <select class="form-select" name="cliente_id" required>
-            <option value="">-- Selecciona un cliente --</option>
-            {% for cliente in clientes %}
-            <option value="{{ cliente.id }}">
-                {{ cliente.nombre_completo }} - {{ cliente.documento_identidad }} - Sucursal: {{ cliente.sucursal }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label for="tipo" class="form-label">Tipo de Cuenta</label>
-        <select class="form-select" name="tipo" required>
-            <option value="">-- Selecciona un tipo --</option>
-            <option value="AHORRO">Ahorro</option>
-            <option value="CORRIENTE">Corriente</option>
-            <option value="PLAZO">Plazo</option>
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label for="saldo" class="form-label">Saldo Inicial</label>
-        <input type="number" step="0.01" min="0" class="form-control" name="saldo" value="0.00" required>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Crear Cuenta</button>
-</form>
-
-{% if mensaje %}
-    <div class="alert alert-info mt-4">{{ mensaje }}</div>
-{% endif %}
+</div>
 {% endblock %}

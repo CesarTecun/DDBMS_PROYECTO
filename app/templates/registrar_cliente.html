@@ -1,102 +1,113 @@
-{# templates/registrar_cliente.html #}
 {% extends "layout.html" %}
 
 {% block content %}
-<h2 class="mb-4">Registro de Cliente</h2>
+<div class="container py-4" style="background-color: #f8f9fa; min-height: 100vh;">
 
-<form method="POST" action="/clientes/registrar">
-<div class="mb-3">
-    <label for="sucursal" class="form-label">Sucursal</label>
-    <select class="form-select" name="sucursal_display" id="sucursal" required 
-        {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}disabled{% endif %}>
-        
-        {% if session.get('rol') == 'sucursal' %}
-            <option value="{{ session.get('sucursal') }}" selected>
-                {{ session.get('sucursal')|replace('sucursal', 'Sucursal ') }}
-            </option>
-        {% elif session.get('rol') == 'credit' %}
-            <option value="creditos" selected>Créditos</option>
-        {% elif session.get('rol') == 'mercadeo' %}
-            <option value="mercadeo" selected>Mercadeo</option>
-        {% else %}
-            <option value="">-- Seleccione una sucursal --</option>
-            <option value="sucursal1">Sucursal 1</option>
-            <option value="sucursal2">Sucursal 2</option>
-            <option value="sucursal3">Sucursal 3</option>
-            <option value="creditos">Créditos</option>
-            <option value="mercadeo">Mercadeo</option>
-        {% endif %}
-    </select>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm p-4 border-0">
+                <h4 class="fw-bold mb-4 text-center">Registro de Cliente</h4>
 
-    {# Campo oculto que envía el valor correcto de la sucursal si el select está deshabilitado #}
-    {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}
-        <input type="hidden" name="sucursal" value="{% if session.get('rol') == 'sucursal' %}{{ session.get('sucursal') }}{% elif session.get('rol') == 'credit' %}creditos{% elif session.get('rol') == 'mercadeo' %}mercadeo{% endif %}">
-    {% else %}
-        {# Si el select está habilitado, asegúrate que el campo enviado sea 'sucursal' #}
-        <script>
-            // sincroniza el valor seleccionado al name real
-            document.addEventListener("DOMContentLoaded", function () {
-                const select = document.getElementById("sucursal");
-                const inputHidden = document.createElement("input");
-                inputHidden.type = "hidden";
-                inputHidden.name = "sucursal";
-                inputHidden.value = select.value;
-                select.form.appendChild(inputHidden);
+                <form method="POST" action="/clientes/registrar">
+                    <!-- Sucursal -->
+                    <div class="mb-3">
+                        <label for="sucursal" class="form-label fw-semibold">Sucursal</label>
+                        <select class="form-select" name="sucursal_display" id="sucursal" required
+                            {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}disabled{% endif %}>
+                            {% if session.get('rol') == 'sucursal' %}
+                                <option value="{{ session.get('sucursal') }}" selected>
+                                    {{ session.get('sucursal')|replace('sucursal', 'Sucursal ') }}
+                                </option>
+                            {% elif session.get('rol') == 'credit' %}
+                                <option value="creditos" selected>Créditos</option>
+                            {% elif session.get('rol') == 'mercadeo' %}
+                                <option value="mercadeo" selected>Mercadeo</option>
+                            {% else %}
+                                <option value="">-- Seleccione una sucursal --</option>
+                                <option value="sucursal1">Sucursal 1</option>
+                                <option value="sucursal2">Sucursal 2</option>
+                                <option value="sucursal3">Sucursal 3</option>
+                                <option value="creditos">Créditos</option>
+                                <option value="mercadeo">Mercadeo</option>
+                            {% endif %}
+                        </select>
 
-                select.addEventListener("change", function () {
-                    inputHidden.value = select.value;
-                });
-            });
-        </script>
-    {% endif %}
+                        {% if session.get('rol') != 'admin' and session.get('rol') != 'mercadeo' %}
+                            <input type="hidden" name="sucursal" value="{% if session.get('rol') == 'sucursal' %}{{ session.get('sucursal') }}{% elif session.get('rol') == 'credit' %}creditos{% elif session.get('rol') == 'mercadeo' %}mercadeo{% endif %}">
+                        {% else %}
+                            <script>
+                                document.addEventListener("DOMContentLoaded", function () {
+                                    const select = document.getElementById("sucursal");
+                                    const inputHidden = document.createElement("input");
+                                    inputHidden.type = "hidden";
+                                    inputHidden.name = "sucursal";
+                                    inputHidden.value = select.value;
+                                    select.form.appendChild(inputHidden);
+
+                                    select.addEventListener("change", function () {
+                                        inputHidden.value = select.value;
+                                    });
+                                });
+                            </script>
+                        {% endif %}
+                    </div>
+
+                    <!-- Datos personales -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre completo</label>
+                        <input type="text" class="form-control" name="nombre_completo" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Fecha de nacimiento</label>
+                        <input type="date" class="form-control" name="fecha_nacimiento" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">DPI (documento de identidad)</label>
+                        <input type="text" class="form-control" name="documento_identidad" required maxlength="13">
+                    </div>
+
+                    <!-- Contacto -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Correo electrónico</label>
+                            <input type="email" class="form-control" name="correo_electronico">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Teléfono</label>
+                            <input type="text" class="form-control" name="telefono" maxlength="15">
+                        </div>
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">Dirección</label>
+                        <input type="text" class="form-control" name="direccion">
+                    </div>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Municipio</label>
+                            <input type="text" class="form-control" name="municipio">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Departamento</label>
+                            <input type="text" class="form-control" name="departamento">
+                        </div>
+                    </div>
+
+                    <!-- Botón -->
+                    <div class="mt-4 text-end">
+                        <button type="submit" class="btn btn-success px-4">Registrar Cliente</button>
+                    </div>
+                </form>
+
+                {% if mensaje %}
+                    <div class="alert alert-info mt-4">{{ mensaje }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
-
-
-    <div class="mb-3">
-        <label for="nombre_completo" class="form-label">Nombre completo</label>
-        <input type="text" class="form-control" name="nombre_completo" required>
-    </div>
-
-    <div class="mb-3">
-        <label for="fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
-        <input type="date" class="form-control" name="fecha_nacimiento" required>
-    </div>
-
-    <div class="mb-3">
-        <label for="documento_identidad" class="form-label">DPI (documento de identidad)</label>
-        <input type="text" class="form-control" name="documento_identidad" required maxlength="13">
-    </div>
-
-    <div class="mb-3">
-        <label for="correo" class="form-label">Correo electrónico</label>
-        <input type="email" class="form-control" name="correo_electronico">
-    </div>
-
-    <div class="mb-3">
-        <label for="telefono" class="form-label">Teléfono</label>
-        <input type="text" class="form-control" name="telefono" maxlength="15">
-    </div>
-
-    <div class="mb-3">
-        <label for="direccion" class="form-label">Dirección</label>
-        <input type="text" class="form-control" name="direccion">
-    </div>
-
-    <div class="row mb-3">
-        <div class="col">
-            <label class="form-label">Municipio</label>
-            <input type="text" class="form-control" name="municipio">
-        </div>
-        <div class="col">
-            <label class="form-label">Departamento</label>
-            <input type="text" class="form-control" name="departamento">
-        </div>
-    </div>
-
-    <button type="submit" class="btn btn-success">Registrar Cliente</button>
-</form>
-
-{% if mensaje %}
-    <div class="alert alert-info mt-4">{{ mensaje }}</div>
-{% endif %}
 {% endblock %}

@@ -1,87 +1,121 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h2 class="mb-4">Panel de Usuario</h2>
+<div class="container-fluid py-4" style="background-color: #f8f9fa; min-height: 100vh;">
+    
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">Clientes</h3>
+        <a href="/clientes/registrar" class="btn btn-success px-4">+ Crear cliente</a>
+    </div>
 
-<form method="get" action="/dashboard" class="mb-4">
-    <label for="rol" class="form-label">Sucursal / Rol</label>
-    <select name="rol" id="rol" class="form-select w-50"
-        {% if rol_usuario != 'admin' %}disabled{% endif %}
-        onchange="this.form.submit()">
-        {% for codigo, nombre in sucursales_disponibles %}
-            <option value="{{ codigo }}" {% if sucursal_actual == codigo %}selected{% endif %}>{{ nombre }}</option>
-        {% endfor %}
-    </select>
+    <!-- Sucursal / Rol + Buscador en una sola línea -->
+    <div class="card shadow-sm mb-4 p-4 bg-white border-0">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            
+            <!-- Selector de sucursal -->
+            <form method="get" action="/dashboard" class="w-100 w-md-auto">
+                <label for="rol" class="form-label fw-semibold text-muted mb-1">Sucursal / Rol</label>
+                <div class="d-flex align-items-center gap-2">
+                    <select name="rol" id="rol" class="form-select"
+                        {% if rol_usuario != 'admin' %}disabled{% endif %}
+                        onchange="this.form.submit()">
+                        {% for codigo, nombre in sucursales_disponibles %}
+                            <option value="{{ codigo }}" {% if sucursal_actual == codigo %}selected{% endif %}>{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if rol_usuario != 'admin' %}
+                        <input type="hidden" name="rol" value="{{ sucursal_actual }}">
+                    {% endif %}
+                </div>
+            </form>
 
-    {% if rol_usuario != 'admin' %}
-        <input type="hidden" name="rol" value="{{ sucursal_actual }}">
-    {% endif %}
-</form>
+            <!-- Buscador -->
+            <div class="w-100">
+                <label for="searchInput" class="form-label fw-semibold text-muted mb-1">Buscar</label>
+                <input type="text" class="form-control" id="searchInput" placeholder="🔍 Buscar por nombre, cuenta, DPI...">
+            </div>
+        </div>
+    </div>
 
-{% set nombre_mostrar = {
-    "clientes_todas": "Clientes",
-    "sucursal1": "Sucursal 1",
-    "sucursal2": "Sucursal 2",
-    "sucursal3": "Sucursal 3",
-    "credit": "Tarjetas de Crédito",
-    "mercadeo": "Mercadeo",
-    "admin": "Administrador"
-}.get(sucursal_actual, "Sucursal desconocida") %}
+    {% set nombre_mostrar = {
+        "clientes_todas": "Clientes",
+        "sucursal1": "Sucursal 1",
+        "sucursal2": "Sucursal 2",
+        "sucursal3": "Sucursal 3",
+        "credit": "Tarjetas de Crédito",
+        "mercadeo": "Mercadeo",
+        "admin": "Administrador"
+    }.get(sucursal_actual, "Sucursal desconocida") %}
 
-{% if sucursal_actual and datos and datos | length > 0 %}
-    <h4>Datos de: {{ nombre_mostrar }}</h4>
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-dark text-center">
-                <tr>
-                    {% for key in datos[0].keys() %}
-                        <th>{{ key.replace('_', ' ') | capitalize }}</th>
-                    {% endfor %}
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for fila in datos %}
-                    <tr>
-                        {% for key, valor in fila.items() %}
-                            <td>
-                                {% if key == "numero_cuenta" %}
-                                    {% if valor %}
-                                        <a href="/cuenta/{{ fila.get('sucursal', sucursal_actual) }}/{{ valor }}" class="text-primary">
-                                            {{ valor }}
-                                        </a>
+    {% if sucursal_actual and datos and datos | length > 0 %}
+        <!-- Tabla de clientes -->
+        <div class="card shadow-sm p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="tablaClientes">
+                    <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            {% for key in datos[0].keys() %}
+                                <th>{{ key.replace('_', ' ') | upper }}</th>
+                            {% endfor %}
+                            <th class="text-center">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in datos %}
+                        <tr>
+                            {% for key, valor in fila.items() %}
+                                <td>
+                                    {% if key == "numero_cuenta" %}
+                                        {% if valor %}
+                                            <a href="/cuenta/{{ fila.get('sucursal', sucursal_actual) }}/{{ valor }}" class="text-decoration-none fw-bold text-primary">
+                                                {{ valor }}
+                                            </a>
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    {% elif key == "tarjeta" %}
+                                        <span class="badge bg-{{ 'success' if valor == 'Sí' else 'secondary' }}">{{ valor }}</span>
+                                    {% elif key == "estado" %}
+                                        <span class="badge bg-{{ 'success' if valor == 'ACTIVA' else 'danger' }}">{{ valor }}</span>
+                                    {% elif key == "sucursal" %}
+                                        {{ valor.replace('sucursal', 'Sucursal ') }}
                                     {% else %}
-                                        —
+                                        {{ valor if valor is not none else "—" }}
                                     {% endif %}
-                                {% elif key == "tarjeta" %}
-                                    <span class="badge bg-{{ 'success' if valor == 'Sí' else 'secondary' }}">{{ valor }}</span>
-                                {% elif key == "sucursal" %}
-                                    {{ valor.replace('sucursal', 'Sucursal ') }}
-                                {% else %}
-                                    {{ valor if valor is not none else "—" }}
+                                </td>
+                            {% endfor %}
+                            <td class="text-center">
+                                {% if rol_usuario == 'credit' or rol_usuario == 'admin' %}
+                                    <a href="/tarjetas/gestionar?dpi={{ fila.get('documento_identidad') }}" class="btn btn-outline-primary btn-sm mb-1">
+                                        Emparejar tarjeta
+                                    </a>
+                                {% endif %}
+                                {% if not fila.get('numero_cuenta') and rol_usuario in ['admin', 'sucursal'] %}
+                                    <a href="/acciones/crear-cuenta?dpi={{ fila.get('documento_identidad') }}&sucursal={{ fila.get('sucursal', sucursal_actual) }}" class="btn btn-outline-success btn-sm">
+                                        Crear cuenta
+                                    </a>
                                 {% endif %}
                             </td>
+                        </tr>
                         {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning mt-4">No hay datos disponibles para esta sucursal o rol.</div>
+    {% endif %}
 
-                        <td class="text-center">
-                            {% set tiene_cuenta = fila["numero_cuenta"] %}
-                            {% if rol_usuario == 'credit' or rol_usuario == 'admin' %}
-                                <a href="/tarjetas/gestionar?dpi={{ fila['documento_identidad'] }}" class="btn btn-sm btn-primary mb-1">
-                                    Emparejar tarjeta
-                                </a>
-                            {% endif %}
-                            {% if not tiene_cuenta and rol_usuario in ['admin', 'sucursal'] %}
-                                <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ fila.get('sucursal', sucursal_actual) }}" class="btn btn-sm btn-success">
-                                    Crear cuenta
-                                </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% elif sucursal_actual %}
-    <div class="alert alert-warning">No hay datos disponibles para esta sucursal o rol.</div>
-{% endif %}
+    <!-- Script de búsqueda en vivo -->
+    <script>
+        document.getElementById("searchInput").addEventListener("keyup", function () {
+            const term = this.value.toLowerCase();
+            document.querySelectorAll("#tablaClientes tbody tr").forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(term) ? "" : "none";
+            });
+        });
+    </script>
+</div>
 {% endblock %}

@@ -431,6 +431,21 @@ def gestionar_tarjetas():
     dpi_enviado = request.form.get("dpi") if request.method == "POST" else request.args.get("dpi", "")
     tarjetas = []
 
+    # Obtener lista de clientes para el select
+    clientes_list = []
+    try:
+        if session.get("rol") in ["admin", "credit"]:
+            clientes_list = obtener_clientes_todas_sucursales(connections)
+        else:
+            sucursal = session.get("sucursal")
+            if sucursal in connections:
+                conn = connections[sucursal].connect()
+                result = conn.execute(text("SELECT id, nombre_completo, documento_identidad, sucursal FROM clientes ORDER BY nombre_completo"))
+                clientes_list = [dict(r._mapping) for r in result]
+                conn.close()
+    except Exception as e:
+        clientes_list = []
+
     try:
         conn_credit = connections["credit"].connect()
 
@@ -501,5 +516,6 @@ def gestionar_tarjetas():
         tarjeta_generada=tarjeta_generada,
         dpi=dpi_enviado,
         tarjetas_cliente=tarjetas_cliente,
-        rol=session.get("rol")
+        rol=session.get("rol"),
+        clientes_list=clientes_list
     )
