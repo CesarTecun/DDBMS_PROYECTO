@@ -31,12 +31,13 @@
 {% if sucursal_actual and datos and datos | length > 0 %}
     <h4>Datos de: {{ nombre_mostrar }}</h4>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover align-middle">
             <thead class="table-dark text-center">
                 <tr>
                     {% for key in datos[0].keys() %}
                         <th>{{ key.replace('_', ' ') | capitalize }}</th>
                     {% endfor %}
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -45,16 +46,12 @@
                         {% for key, valor in fila.items() %}
                             <td>
                                 {% if key == "numero_cuenta" %}
-                                    {% if rol_usuario in ['credit', 'admin'] %}
-
-                                    <a href="/tarjetas/gestionar?dpi={{ fila['documento_identidad'] }}" class="btn btn-sm btn-primary">Emparejar tarjeta</a>
-
+                                    {% if valor %}
+                                        <a href="/cuenta/{{ fila.get('sucursal', sucursal_actual) }}/{{ valor }}" class="text-primary">
+                                            {{ valor }}
+                                        </a>
                                     {% else %}
-                                        {% if valor %}
-                                            <a href="/cuenta/{{ sucursal_actual }}/{{ valor }}" class="text-primary">{{ valor }}</a>
-                                        {% else %}
-                                            <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ fila.get('sucursal', sucursal_actual) }}" class="btn btn-sm btn-success">Crear cuenta</a>
-                                        {% endif %}
+                                        —
                                     {% endif %}
                                 {% elif key == "tarjeta" %}
                                     <span class="badge bg-{{ 'success' if valor == 'Sí' else 'secondary' }}">{{ valor }}</span>
@@ -65,6 +62,20 @@
                                 {% endif %}
                             </td>
                         {% endfor %}
+
+                        <td class="text-center">
+                            {% set tiene_cuenta = fila["numero_cuenta"] %}
+                            {% if rol_usuario == 'credit' or rol_usuario == 'admin' %}
+                                <a href="/tarjetas/gestionar?dpi={{ fila['documento_identidad'] }}" class="btn btn-sm btn-primary mb-1">
+                                    Emparejar tarjeta
+                                </a>
+                            {% endif %}
+                            {% if not tiene_cuenta and rol_usuario in ['admin', 'sucursal'] %}
+                                <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ fila.get('sucursal', sucursal_actual) }}" class="btn btn-sm btn-success">
+                                    Crear cuenta
+                                </a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

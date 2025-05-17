@@ -65,7 +65,7 @@ def dashboard():
 
     # Determinar sucursal/rol seleccionado
     if rol_usuario == "admin":
-        sucursal_actual = request.args.get("rol") or "sucursal1"
+        sucursal_actual = request.args.get("rol") or "clientes_todas"
     elif rol_usuario == "credit":
         sucursal_actual = "clientes_todas"  # nuevo código interno
     elif rol_usuario == "mercadeo":
@@ -76,7 +76,7 @@ def dashboard():
     datos = []
 
     # Mostrar todos los clientes si es credit
-    if sucursal_actual == "clientes_todas" and rol_usuario == "credit":
+    if sucursal_actual == "clientes_todas" and rol_usuario in ["credit", "admin"]:
         datos = obtener_clientes_todas_sucursales(connections)
 
     elif sucursal_actual in connections:
@@ -112,7 +112,7 @@ def dashboard():
 
     # Mostrar el selector con Clientes por defecto para credit
     sucursales_disponibles = [
-        ("clientes_todas", "Clientes") if rol_usuario == "credit" else None,
+        ("clientes_todas", "Clientes") if rol_usuario in ["credit", "admin"] else None,
         ("sucursal1", "Sucursal 1"),
         ("sucursal2", "Sucursal 2"),
         ("sucursal3", "Sucursal 3"),

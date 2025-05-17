@@ -12,9 +12,9 @@
                 <label class="form-label">DPI del cliente</label>
                 <input type="text" class="form-control" name="dpi" maxlength="13" required value="{{ dpi or '' }}">
                     {% if dpi and tarjetas_cliente is not none %}
-                        <p class="mt-2 text-muted">
-                            💳 Este cliente ya tiene <strong>{{ tarjetas_cliente }}</strong> tarjeta(s) registradas.
-                        </p>
+                    <div class="alert alert-info tarjeta-slide">
+                        💳 Este cliente ya tiene <strong>{{ tarjetas_cliente }}</strong> tarjeta(s) registradas.
+                    </div>
                     {% endif %}
             </div>
 
