@@ -7,6 +7,16 @@ from flask import session, redirect
 from datetime import date
 from sqlalchemy import text
 
+from app.utils_ddbms import (
+    obtener_clientes_todas_sucursales,
+    buscar_cliente_por_dpi,
+    generar_datos_tarjeta,
+    asociar_tarjeta,
+    contar_tarjetas_cliente,
+    obtener_telefono_tarjeta
+)
+
+
 ddbms_bp = Blueprint('ddbms', __name__)
 
 @ddbms_bp.route('/clientes/<sucursal>')
@@ -53,16 +63,23 @@ def dashboard():
     rol_usuario = session.get("rol")
     sucursal_actual = ""
 
+    # Determinar sucursal/rol seleccionado
     if rol_usuario == "admin":
         sucursal_actual = request.args.get("rol") or "sucursal1"
-    elif rol_usuario in ["credit", "mercadeo"]:
-        sucursal_actual = rol_usuario
+    elif rol_usuario == "credit":
+        sucursal_actual = "clientes_todas"  # nuevo código interno
+    elif rol_usuario == "mercadeo":
+        sucursal_actual = "mercadeo"
     else:
         sucursal_actual = session.get("sucursal")
 
     datos = []
 
-    if sucursal_actual in connections:
+    # Mostrar todos los clientes si es credit
+    if sucursal_actual == "clientes_todas" and rol_usuario == "credit":
+        datos = obtener_clientes_todas_sucursales(connections)
+
+    elif sucursal_actual in connections:
         try:
             conn = connections[sucursal_actual].connect()
 
@@ -93,7 +110,9 @@ def dashboard():
         except Exception as e:
             print(f"[ERROR] {sucursal_actual}: {e}")
 
+    # Mostrar el selector con Clientes por defecto para credit
     sucursales_disponibles = [
+        ("clientes_todas", "Clientes") if rol_usuario == "credit" else None,
         ("sucursal1", "Sucursal 1"),
         ("sucursal2", "Sucursal 2"),
         ("sucursal3", "Sucursal 3"),
@@ -101,6 +120,7 @@ def dashboard():
         ("mercadeo", "Mercadeo"),
         ("admin", "Administrador")
     ]
+    sucursales_disponibles = [s for s in sucursales_disponibles if s is not None]
 
     return render_template(
         "dashboard.html",
@@ -109,6 +129,7 @@ def dashboard():
         rol_usuario=rol_usuario,
         sucursales_disponibles=sucursales_disponibles
     )
+
 
 
 
@@ -339,6 +360,7 @@ def transferencia():
     return render_template("transferencia.html", mensaje=mensaje)
 
 
+
 @ddbms_bp.route("/tarjetas/gestionar", methods=["GET", "POST"])
 def gestionar_tarjetas():
     if not session.get("autenticado"):
@@ -348,108 +370,50 @@ def gestionar_tarjetas():
 
     mensaje = ""
     tarjeta_generada = None
-    dpi_enviado = request.form.get("dpi") if request.method == "POST" else None
-    tarjetas = []  # Initialize here to ensure it always exists
-    conn_credit = None
+    dpi_enviado = request.form.get("dpi") if request.method == "POST" else request.args.get("dpi", "")
+    tarjetas = []
 
     try:
         conn_credit = connections["credit"].connect()
 
         if request.method == "POST":
             if "actualizar_estado" in request.form:
-                tarjeta_id = request.form.get("id")
-                nuevo_estado = request.form.get("estado")
+                conn_credit.execute(
+                    text("UPDATE tarjetas SET estado = :estado WHERE id = :id"),
+                    {
+                        "estado": request.form.get("estado"),
+                        "id": request.form.get("id")
+                    }
+                )
+                conn_credit.commit()
+                mensaje = "✅ Estado actualizado correctamente."
 
-                if tarjeta_id and nuevo_estado:
-                    conn_credit.execute(text("""
-                        UPDATE tarjetas
-                        SET estado = :estado
-                        WHERE id = :id
-                    """), {"estado": nuevo_estado, "id": tarjeta_id})
-                    conn_credit.commit()
-                    mensaje = "✅ Estado actualizado correctamente."
-
-            if "generar" in request.form:
+            elif "generar" in request.form:
                 dpi = request.form["dpi"].strip()
-                
-                if not dpi:
-                    mensaje = "❌ El campo DPI es obligatorio."
-                elif not dpi.isdigit() or len(dpi) != 13:
-                    mensaje = "❌ El DPI debe contener exactamente 13 dígitos numéricos."
+                if not dpi or not dpi.isdigit() or len(dpi) != 13:
+                    mensaje = "❌ El DPI debe tener exactamente 13 dígitos numéricos."
                 else:
-                    cliente_id = None
-                    telefono = None
-                    sucursales = ["sucursal1", "sucursal2", "sucursal3"]
-
-                    for sucursal in sucursales:
-                        conn_cliente = connections[sucursal].connect()
-                        cliente = conn_cliente.execute(
-                            text("SELECT id, telefono FROM clientes WHERE documento_identidad = :dpi"),
-                            {"dpi": dpi}
-                        ).fetchone()
-                        conn_cliente.close()
-
-                        if cliente:
-                            cliente_id = cliente[0]
-                            telefono = cliente[1]
-                            break
-
-                    if not cliente_id:
+                    cliente = buscar_cliente_por_dpi(dpi, connections)
+                    if not cliente:
                         mensaje = "❌ Cliente no encontrado."
                     else:
-                        numero_tarjeta = ''.join([str(random.randint(0, 9)) for _ in range(16)])
-                        cvv = ''.join([str(random.randint(0, 9)) for _ in range(3)])
+                        numero_tarjeta, cvv = generar_datos_tarjeta()
                         tarjeta_generada = {
                             "numero": numero_tarjeta,
                             "cvv": cvv,
-                            "telefono": telefono
+                            "telefono": cliente[1]
                         }
 
             elif "asociar" in request.form:
                 dpi = request.form["dpi"]
-                numero_tarjeta = request.form["numero_tarjeta"]
-                cvv = request.form["cvv"]
-                fecha_creacion = date.today()
-                fecha_expiracion = fecha_creacion.replace(year=fecha_creacion.year + 5)
-                limite = 3500.00
-                cliente_id = None
-
-                for sucursal in ["sucursal1", "sucursal2", "sucursal3"]:
-                    conn_cliente = connections[sucursal].connect()
-                    cliente = conn_cliente.execute(
-                        text("SELECT id FROM clientes WHERE documento_identidad = :dpi"),
-                        {"dpi": dpi}
-                    ).fetchone()
-                    conn_cliente.close()
-                    if cliente:
-                        cliente_id = cliente[0]
-                        break
-
-                if not cliente_id:
+                cliente = buscar_cliente_por_dpi(dpi, connections)
+                if not cliente:
                     mensaje = "❌ Cliente no encontrado."
                 else:
-                    result = conn_credit.execute(text("""
-                        INSERT INTO tarjetas (numero_tarjeta, cvv, fecha_expiracion, limite_credito, saldo_actual)
-                        VALUES (:numero, :cvv, :fecha, :limite, :limite)
-                    """), {
-                        "numero": numero_tarjeta,
-                        "cvv": cvv,
-                        "fecha": fecha_expiracion,
-                        "limite": limite
-                    })
-                    tarjeta_id = result.lastrowid
-
-                    conn_credit.execute(text("""
-                        INSERT INTO cliente_tarjeta (cliente_id, tarjeta_id)
-                        VALUES (:cliente_id, :tarjeta_id)
-                    """), {
-                        "cliente_id": cliente_id,
-                        "tarjeta_id": tarjeta_id
-                    })
-                    conn_credit.commit()
+                    asociar_tarjeta(conn_credit, cliente[0], request.form["numero_tarjeta"], request.form["cvv"])
                     mensaje = "✅ Tarjeta generada y asociada correctamente."
 
-        # Actualizar tarjetas vencidas
+        # Marcar vencidas
         conn_credit.execute(text("""
             UPDATE tarjetas
             SET estado = 'VENCIDA'
@@ -461,34 +425,16 @@ def gestionar_tarjetas():
         tarjetas = []
 
         for t in tarjetas_raw:
-            tarjeta_dict = dict(t._mapping)
-            telefono = None
+            tarjeta = dict(t._mapping)
+            tarjeta["telefono"] = obtener_telefono_tarjeta(t.id, connections)
+            tarjetas.append(tarjeta)
 
-            # Obtener cliente_id asociado a la tarjeta
-            cliente = conn_credit.execute(text("""
-                SELECT cliente_id FROM cliente_tarjeta WHERE tarjeta_id = :tid
-            """), {"tid": t.id}).fetchone()
-
-            if cliente:
-                cliente_id = cliente[0]
-                for sucursal in ["sucursal1", "sucursal2", "sucursal3"]:
-                    conn_s = connections[sucursal].connect()
-                    result = conn_s.execute(text("""
-                        SELECT telefono FROM clientes WHERE id = :cid
-                    """), {"cid": cliente_id}).fetchone()
-                    conn_s.close()
-                    if result:
-                        telefono = result[0]
-                        break
-
-            tarjeta_dict["telefono"] = telefono
-            tarjetas.append(tarjeta_dict)
+        conn_credit.close()
 
     except Exception as e:
         mensaje = f"❌ Error: {e}"
-    finally:
-        if conn_credit:
-            conn_credit.close()
+
+    tarjetas_cliente = contar_tarjetas_cliente(dpi_enviado, connections) if dpi_enviado else 0
 
     return render_template(
         "gestionar_tarjetas.html",
@@ -496,5 +442,6 @@ def gestionar_tarjetas():
         mensaje=mensaje,
         tarjeta_generada=tarjeta_generada,
         dpi=dpi_enviado,
+        tarjetas_cliente=tarjetas_cliente,
         rol=session.get("rol")
     )

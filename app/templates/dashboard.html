@@ -19,6 +19,7 @@
 </form>
 
 {% set nombre_mostrar = {
+    "clientes_todas": "Clientes",
     "sucursal1": "Sucursal 1",
     "sucursal2": "Sucursal 2",
     "sucursal3": "Sucursal 3",
@@ -44,11 +45,21 @@
                         {% for key, valor in fila.items() %}
                             <td>
                                 {% if key == "numero_cuenta" %}
-                                    {% if valor %}
-                                        <a href="/cuenta/{{ sucursal_actual }}/{{ valor }}" class="text-primary">{{ valor }}</a>
+                                    {% if rol_usuario in ['credit', 'admin'] %}
+
+                                    <a href="/tarjetas/gestionar?dpi={{ fila['documento_identidad'] }}" class="btn btn-sm btn-primary">Emparejar tarjeta</a>
+
                                     {% else %}
-                                        <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ sucursal_actual }}" class="btn btn-sm btn-success">Crear cuenta</a>
+                                        {% if valor %}
+                                            <a href="/cuenta/{{ sucursal_actual }}/{{ valor }}" class="text-primary">{{ valor }}</a>
+                                        {% else %}
+                                            <a href="/acciones/crear-cuenta?dpi={{ fila['documento_identidad'] }}&sucursal={{ fila.get('sucursal', sucursal_actual) }}" class="btn btn-sm btn-success">Crear cuenta</a>
+                                        {% endif %}
                                     {% endif %}
+                                {% elif key == "tarjeta" %}
+                                    <span class="badge bg-{{ 'success' if valor == 'Sí' else 'secondary' }}">{{ valor }}</span>
+                                {% elif key == "sucursal" %}
+                                    {{ valor.replace('sucursal', 'Sucursal ') }}
                                 {% else %}
                                     {{ valor if valor is not none else "—" }}
                                 {% endif %}
