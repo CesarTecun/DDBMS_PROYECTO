@@ -275,17 +275,28 @@ def crear_cuenta():
         except Exception as e:
             mensaje = f"❌ Error inesperado: {e}"
 
-    # Obtener todos los clientes para mostrar en el formulario
+    # Obtener los clientes para mostrar en el formulario según el rol
     clientes = []
     try:
         conn = connections["master"].connect()
-        result = conn.execute(
-            text("""
-                SELECT id, nombre_completo, documento_identidad, sucursal
-                FROM clientes
-                ORDER BY nombre_completo
-            """)
-        )
+        if session.get('rol') == 'admin':
+            result = conn.execute(
+                text("""
+                    SELECT id, nombre_completo, documento_identidad, sucursal
+                    FROM clientes
+                    ORDER BY nombre_completo
+                """)
+            )
+        else:
+            sucursal_usuario = session.get('sucursal')
+            result = conn.execute(
+                text("""
+                    SELECT id, nombre_completo, documento_identidad, sucursal
+                    FROM clientes
+                    WHERE sucursal = :sucursal
+                    ORDER BY nombre_completo
+                """), {"sucursal": sucursal_usuario}
+            )
         clientes = result.fetchall()
         conn.close()
     except Exception as e:
@@ -307,17 +318,29 @@ def generar_numero_cuenta(codigo_banco, tipo):
 def transferencia():
     mensaje = ""
     cuentas = []
-    # Obtener todas las cuentas para el select de cuenta destino
+    # Obtener cuentas para el select según el rol y sucursal
     try:
         conn = connections["master"].connect()
-        result = conn.execute(
-            text("""
-                SELECT c.numero_cuenta, c.tipo, cl.nombre_completo, cl.sucursal, c.saldo
-                FROM cuentas c
-                JOIN clientes cl ON c.cliente_id = cl.id
-                ORDER BY c.numero_cuenta
-            """)
-        )
+        if session.get('rol') == 'admin':
+            result = conn.execute(
+                text("""
+                    SELECT c.numero_cuenta, c.tipo, cl.nombre_completo, cl.sucursal, c.saldo
+                    FROM cuentas c
+                    JOIN clientes cl ON c.cliente_id = cl.id
+                    ORDER BY c.numero_cuenta
+                """)
+            )
+        else:
+            sucursal_usuario = session.get('sucursal')
+            result = conn.execute(
+                text("""
+                    SELECT c.numero_cuenta, c.tipo, cl.nombre_completo, cl.sucursal, c.saldo
+                    FROM cuentas c
+                    JOIN clientes cl ON c.cliente_id = cl.id
+                    WHERE cl.sucursal = :sucursal
+                    ORDER BY c.numero_cuenta
+                """), {"sucursal": sucursal_usuario}
+            )
         cuentas = result.fetchall()
         conn.close()
     except Exception as e:
