@@ -67,11 +67,11 @@ def dashboard():
     rol_usuario = session.get("rol")
     sucursal_actual = ""
 
-    # Determinar sucursal/rol seleccionado
+    # Determinar sucursal o rol actual
     if rol_usuario == "admin":
         sucursal_actual = request.args.get("rol") or "clientes_todas"
     elif rol_usuario == "credit":
-        sucursal_actual = "clientes_todas"  # nuevo código interno
+        sucursal_actual = "clientes_todas"
     elif rol_usuario == "mercadeo":
         sucursal_actual = "mercadeo"
     else:
@@ -79,12 +79,11 @@ def dashboard():
 
     datos = []
 
-    # Mostrar todos los clientes si es credit
-    if sucursal_actual == "clientes_todas" and rol_usuario in ["credit", "admin"]:
-        datos = obtener_clientes_todas_sucursales(connections)
+    try:
+        if sucursal_actual == "clientes_todas" and rol_usuario in ["credit", "admin"]:
+            datos = obtener_clientes_todas_sucursales(connections)
 
-    elif sucursal_actual in connections:
-        try:
+        elif sucursal_actual in connections:
             conn = connections[sucursal_actual].connect()
 
             if "sucursal" in sucursal_actual:
@@ -102,19 +101,22 @@ def dashboard():
                     LEFT JOIN cuentas cu ON c.id = cu.cliente_id
                     WHERE c.sucursal = :sucursal
                 """), {"sucursal": sucursal_actual})
-            elif sucursal_actual == 'credit':
+
+            elif sucursal_actual == "credit":
                 result = conn.execute(text("SELECT * FROM tarjetas"))
-            elif sucursal_actual == 'mercadeo':
+
+            elif sucursal_actual == "mercadeo":
                 result = conn.execute(text("SELECT * FROM campana"))
+
             else:
                 result = []
 
-            datos = [dict(r._mapping) for r in result]
+            datos = [dict(r._mapping) for r in result] if result else []
             conn.close()
-        except Exception as e:
-            print(f"[ERROR] {sucursal_actual}: {e}")
 
-    # Mostrar el selector con Clientes por defecto para credit
+    except Exception as e:
+        print(f"[ERROR] Error en dashboard con sucursal '{sucursal_actual}': {e}")
+
     sucursales_disponibles = [
         ("clientes_todas", "Clientes") if rol_usuario in ["credit", "admin"] else None,
         ("sucursal1", "Sucursal 1"),
@@ -133,6 +135,7 @@ def dashboard():
         rol_usuario=rol_usuario,
         sucursales_disponibles=sucursales_disponibles
     )
+
 
 
 

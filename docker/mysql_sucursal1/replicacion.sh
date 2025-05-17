@@ -6,33 +6,32 @@ docker-entrypoint.sh mysqld &
 
 pid="$!"
 
-# Espera hasta que el servidor esté listo
-until mysqladmin ping -h "localhost" -proot --silent; do
+
+until mysqladmin ping -h127.0.0.1 -uroot -proot --silent; do
   echo "⏳ Esperando que MySQL esté listo para conexiones..."
   sleep 2
 done
 
-# Esperar un poco más para asegurar que init.sql se haya ejecutado
+
 sleep 5
 
 echo "🔁 Configurando replicación..."
 
-# Ejecutar replicación con autenticación segura
-mysql -uroot -proot <<EOF
-STOP SLAVE;
-RESET SLAVE ALL;
+mysql -uroot -proot -h127.0.0.1 <<EOF
+STOP REPLICA;
+RESET REPLICA ALL;
 
-CHANGE MASTER TO
-  MASTER_HOST='mysql_master',
-  MASTER_PORT=3306,
-  MASTER_USER='replica',
-  MASTER_PASSWORD='replica123',
-  MASTER_AUTO_POSITION=1;
+CHANGE REPLICATION SOURCE TO
+  SOURCE_HOST='mysql_master',
+  SOURCE_PORT=3306,
+  SOURCE_USER='replica',
+  SOURCE_PASSWORD='replica123',
+  SOURCE_AUTO_POSITION = 1;
 
-START SLAVE;
+START REPLICA;
 EOF
 
 echo "✅ Replicación configurada exitosamente."
 
-# Esperar al proceso principal de MySQL
+
 wait "$pid"

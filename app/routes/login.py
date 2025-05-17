@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from app.db import connections
 from sqlalchemy import text
 from functools import wraps
-from flask import session, redirect, url_for
 
 def login_required(roles_permitidos=None):
     def decorador(func):
@@ -15,7 +14,6 @@ def login_required(roles_permitidos=None):
             return func(*args, **kwargs)
         return wrapper
     return decorador
-
 
 login_bp = Blueprint('login', __name__)
 
@@ -40,7 +38,13 @@ def login():
                 session['autenticado'] = True
                 session['usuario'] = result.username
                 session['rol'] = result.rol
-                session['sucursal'] = result.sucursal
+
+                # ✅ Solo guardar sucursal si aplica
+                if result.rol != "admin":
+                    session['sucursal'] = result.sucursal
+                else:
+                    session.pop('sucursal', None)  # elimina sucursal si existe
+
                 return redirect('/dashboard')
             else:
                 mensaje = "❌ Usuario o contraseña incorrectos"
