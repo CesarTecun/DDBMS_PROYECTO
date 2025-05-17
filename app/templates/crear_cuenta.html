@@ -21,8 +21,15 @@
     </div>
 
     <div class="mb-3">
-        <label for="documento_identidad" class="form-label">DPI del Cliente</label>
-        <input type="text" class="form-control" name="documento_identidad" value="{{ dpi }}" maxlength="13" required pattern="^\d{13}$" title="Debe tener exactamente 13 dígitos">
+        <label for="cliente_id" class="form-label">Cliente</label>
+        <select class="form-select" name="cliente_id" required>
+            <option value="">-- Selecciona un cliente --</option>
+            {% for cliente in clientes %}
+            <option value="{{ cliente.id }}">
+                {{ cliente.nombre_completo }} - {{ cliente.documento_identidad }} - Sucursal: {{ cliente.sucursal }}
+            </option>
+            {% endfor %}
+        </select>
     </div>
 
     <div class="mb-3">

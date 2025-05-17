@@ -204,13 +204,13 @@ def crear_cuenta():
         try:
             # Obtener datos del formulario
             sucursal = request.form["sucursal"]
-            dpi = request.form["documento_identidad"]
+            cliente_id = request.form["cliente_id"]
             tipo = request.form["tipo"]
             saldo = request.form["saldo"]
 
             # Validación de tipo
             if tipo not in ["AHORRO", "CORRIENTE", "PLAZO"]:
-                return render_template("crear_cuenta.html", mensaje="❌ Tipo de cuenta inválido.", dpi=dpi, sucursal=sucursal)
+                return render_template("crear_cuenta.html", mensaje="❌ Tipo de cuenta inválido.", sucursal=sucursal)
 
             # Validar y convertir saldo
             try:
@@ -218,7 +218,7 @@ def crear_cuenta():
                 if saldo < 0:
                     raise ValueError("Saldo negativo.")
             except ValueError:
-                return render_template("crear_cuenta.html", mensaje="❌ El saldo debe ser un número positivo.", dpi=dpi, sucursal=sucursal)
+                return render_template("crear_cuenta.html", mensaje="❌ El saldo debe ser un número positivo.", sucursal=sucursal)
 
             # Protección según rol
             if session.get("rol") != "admin":
@@ -226,17 +226,16 @@ def crear_cuenta():
 
             conn = connections["master"].connect()
 
-            # Buscar cliente por DPI
+            # Si necesitas el DPI, consúltalo usando el cliente_id
             result = conn.execute(
-                text("SELECT id FROM clientes WHERE documento_identidad = :dpi"),
-                {"dpi": dpi}
+                text("SELECT documento_identidad FROM clientes WHERE id = :id"),
+                {"id": cliente_id}
             ).fetchone()
+            dpi = result[0] if result else None
 
             if result is None:
-                mensaje = "❌ No se encontró ningún cliente con ese DPI."
+                mensaje = "❌ No se encontró ningún cliente con ese ID."
             else:
-                cliente_id = result[0]
-
                 # Verificar si ya tiene cuenta de ese tipo
                 existe = conn.execute(
                     text("SELECT 1 FROM cuentas WHERE cliente_id = :cliente_id AND tipo = :tipo"),
@@ -258,15 +257,14 @@ def crear_cuenta():
                     # Insertar cuenta
                     conn.execute(
                         text("""
-                            INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo, sucursal)
-                            VALUES (:cliente_id, :numero_cuenta, :tipo, :saldo, :sucursal)
+                            INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo)
+                            VALUES (:cliente_id, :numero_cuenta, :tipo, :saldo)
                         """),
                         {
                             "cliente_id": cliente_id,
                             "numero_cuenta": numero_cuenta,
                             "tipo": tipo,
-                            "saldo": saldo,
-                            "sucursal": sucursal
+                            "saldo": saldo
                         }
                     )
                     conn.commit()
@@ -277,7 +275,24 @@ def crear_cuenta():
         except Exception as e:
             mensaje = f"❌ Error inesperado: {e}"
 
-    return render_template("crear_cuenta.html", mensaje=mensaje, dpi=dpi_precargado, sucursal=sucursal_precargada)
+    # Obtener todos los clientes para mostrar en el formulario
+    clientes = []
+    try:
+        conn = connections["master"].connect()
+        result = conn.execute(
+            text("""
+                SELECT id, nombre_completo, documento_identidad, sucursal
+                FROM clientes
+                ORDER BY nombre_completo
+            """)
+        )
+        clientes = result.fetchall()
+        conn.close()
+    except Exception as e:
+        print(f"Error al obtener clientes: {e}")
+        clientes = []
+
+    return render_template("crear_cuenta.html", mensaje=mensaje, dpi=dpi_precargado, sucursal=sucursal_precargada, clientes=clientes)
 
 
 def generar_numero_cuenta(codigo_banco, tipo):
@@ -291,28 +306,62 @@ def generar_numero_cuenta(codigo_banco, tipo):
 @ddbms_bp.route("/acciones/transferencia", methods=["GET", "POST"])
 def transferencia():
     mensaje = ""
+    cuentas = []
+    # Obtener todas las cuentas para el select de cuenta destino
+    try:
+        conn = connections["master"].connect()
+        result = conn.execute(
+            text("""
+                SELECT c.numero_cuenta, c.tipo, cl.nombre_completo, cl.sucursal, c.saldo
+                FROM cuentas c
+                JOIN clientes cl ON c.cliente_id = cl.id
+                ORDER BY c.numero_cuenta
+            """)
+        )
+        cuentas = result.fetchall()
+        conn.close()
+    except Exception as e:
+        print(f"Error al obtener cuentas: {e}")
+        cuentas = []
 
     if request.method == "POST":
         try:
-            origen_sucursal = request.form["origen_sucursal"]
-            destino_sucursal = request.form["destino_sucursal"]
+
             cuenta_origen = request.form["cuenta_origen"]
             cuenta_destino = request.form["cuenta_destino"]
+            monto = request.form["monto"]
 
             # Validar monto
             try:
-                monto = float(request.form["monto"])
+                monto = float(monto)
                 if monto <= 0:
                     raise ValueError
             except ValueError:
-                return render_template("transferencia.html", mensaje="❌ El monto debe ser un número positivo.")
+                return render_template("transferencia.html", mensaje="❌ El monto debe ser un número positivo.", cuentas=cuentas)
 
-            if cuenta_origen == cuenta_destino and origen_sucursal == destino_sucursal:
-                return render_template("transferencia.html", mensaje="❌ Las cuentas origen y destino no pueden ser iguales.")
+            if cuenta_origen == cuenta_destino:
+                return render_template("transferencia.html", mensaje="❌ Las cuentas origen y destino no pueden ser iguales.", cuentas=cuentas)
+
+            # Obtener sucursal de la cuenta origen directamente de la base de datos
+            conn_temp = connections["master"].connect()
+            result = conn_temp.execute(
+                text("""
+                    SELECT cl.sucursal
+                    FROM cuentas c
+                    JOIN clientes cl ON c.cliente_id = cl.id
+                    WHERE c.numero_cuenta = :cuenta_origen
+                """), {"cuenta_origen": cuenta_origen}
+            )
+            row = result.fetchone()
+            conn_temp.close()
+
+            if not row:
+                return render_template("transferencia.html", mensaje="❌ Cuenta origen no encontrada.", cuentas=cuentas)
+            sucursal = row.sucursal
 
             # Conexiones SOLO DE LECTURA para validar cuentas
-            conn_origen_read = connections[origen_sucursal].connect()
-            conn_destino_read = connections[destino_sucursal].connect()
+            conn_origen_read = connections[sucursal].connect()
+            conn_destino_read = connections[sucursal].connect()
 
             origen = buscar_cuenta(conn_origen_read, cuenta_origen)
             destino = buscar_cuenta(conn_destino_read, cuenta_destino)
@@ -344,9 +393,7 @@ def transferencia():
         except Exception as e:
             mensaje = f"❌ Error: {e}"
 
-    return render_template("transferencia.html", mensaje=mensaje)
-
-
+    return render_template("transferencia.html", mensaje=mensaje, cuentas=cuentas)
 
 
 @ddbms_bp.route("/tarjetas/gestionar", methods=["GET", "POST"])

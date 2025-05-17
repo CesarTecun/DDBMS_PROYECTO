@@ -5,32 +5,37 @@
 <h2 class="mb-4">Transferencia entre Cuentas</h2>
 
 <form method="POST" action="/acciones/transferencia">
-    <div class="mb-3">
-        <label class="form-label">Sucursal Origen</label>
-        <select class="form-select" name="origen_sucursal" required>
-            <option value="sucursal1">Sucursal 1</option>
-            <option value="sucursal2">Sucursal 2</option>
-            <option value="sucursal3">Sucursal 3</option>
-        </select>
-    </div>
 
     <div class="mb-3">
         <label class="form-label">Cuenta Origen</label>
-        <input type="text" class="form-control" name="cuenta_origen" required>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Sucursal Destino</label>
-        <select class="form-select" name="destino_sucursal" required>
-            <option value="sucursal1">Sucursal 1</option>
-            <option value="sucursal2">Sucursal 2</option>
-            <option value="sucursal3">Sucursal 3</option>
+        <select class="form-select" name="cuenta_origen" required>
+            <option value="">-- Selecciona una cuenta --</option>
+            {% for cuenta in cuentas %}
+            <option value="{{ cuenta.numero_cuenta }}">
+                {{ cuenta.numero_cuenta }} - 
+                {{ cuenta.tipo }} - 
+                {{ cuenta.nombre_completo }} - 
+                Sucursal {{ cuenta.sucursal }} -
+                Saldo: {{ cuenta.saldo }}
+            </option>
+            {% endfor %}
         </select>
     </div>
 
     <div class="mb-3">
         <label class="form-label">Cuenta Destino</label>
-        <input type="text" class="form-control" name="cuenta_destino" required>
+        <select class="form-select" name="cuenta_destino" required>
+            <option value="">-- Selecciona una cuenta --</option>
+            {% for cuenta in cuentas %}
+            <option value="{{ cuenta.numero_cuenta }}">
+                {{ cuenta.numero_cuenta }} - 
+                {{ cuenta.tipo }} - 
+                {{ cuenta.nombre_completo }} - 
+                Sucursal {{ cuenta.sucursal }} -
+                Saldo: {{ cuenta.saldo }}
+            </option>
+            {% endfor %}
+        </select>
     </div>
 
     <div class="mb-3">
