@@ -8,20 +8,16 @@
     <select name="rol" id="rol" class="form-select w-50"
         {% if rol_usuario != 'admin' %}disabled{% endif %}
         onchange="this.form.submit()">
-
-        <option value="">-- Selecciona un rol --</option>
         {% for codigo, nombre in sucursales_disponibles %}
             <option value="{{ codigo }}" {% if sucursal_actual == codigo %}selected{% endif %}>{{ nombre }}</option>
         {% endfor %}
     </select>
 
     {% if rol_usuario != 'admin' %}
-        <!-- Campo oculto para enviar el valor correcto si el select está deshabilitado -->
         <input type="hidden" name="rol" value="{{ sucursal_actual }}">
     {% endif %}
 </form>
 
-{# Mostrar el nombre bonito de la sucursal actual #}
 {% set nombre_mostrar = {
     "sucursal1": "Sucursal 1",
     "sucursal2": "Sucursal 2",
@@ -29,9 +25,9 @@
     "credit": "Tarjetas de Crédito",
     "mercadeo": "Mercadeo",
     "admin": "Administrador"
-}[sucursal_actual] %}
+}.get(sucursal_actual, "Sucursal desconocida") %}
 
-{% if sucursal_actual and datos %}
+{% if sucursal_actual and datos and datos | length > 0 %}
     <h4>Datos de: {{ nombre_mostrar }}</h4>
     <div class="table-responsive">
         <table class="table table-bordered table-hover">

@@ -79,7 +79,8 @@ def dashboard():
                         cu.fecha_apertura
                     FROM clientes c
                     LEFT JOIN cuentas cu ON c.id = cu.cliente_id
-                """))
+                    WHERE c.sucursal = :sucursal
+                """), {"sucursal": sucursal_actual})
             elif sucursal_actual == 'credit':
                 result = conn.execute(text("SELECT * FROM tarjetas"))
             elif sucursal_actual == 'mercadeo':
@@ -146,7 +147,7 @@ def ejecutar_formulario():
     cuenta_destino = request.form.get('cuenta_destino')
     tarjeta = request.form.get('tarjeta')
 
-    conn = connections[sucursal].connect()
+    conn = connections["master"].connect()
     msg = ""
 
     try:
@@ -184,10 +185,16 @@ def registrar_cliente():
     if request.method == "POST":
         try:
             data = request.form
-            conn = connections[data['sucursal']].connect()
+            conn = connections["master"].connect()
             stmt = text("""
-                INSERT INTO clientes (nombre_completo, fecha_nacimiento, documento_identidad, correo_electronico, telefono, direccion, municipio, departamento)
-                VALUES (:nombre_completo, :fecha_nacimiento, :documento_identidad, :correo_electronico, :telefono, :direccion, :municipio, :departamento)
+                INSERT INTO clientes (
+                    nombre_completo, fecha_nacimiento, documento_identidad,
+                    correo_electronico, telefono, direccion, municipio, departamento, sucursal
+                )
+                VALUES (
+                    :nombre_completo, :fecha_nacimiento, :documento_identidad,
+                    :correo_electronico, :telefono, :direccion, :municipio, :departamento, :sucursal
+                )
             """)
             conn.execute(stmt, dict(data))
             conn.commit()
@@ -232,7 +239,7 @@ def crear_cuenta():
             if session.get("rol") != "admin":
                 sucursal = session.get("sucursal")
 
-            conn = connections[sucursal].connect()
+            conn = connections["master"].connect()
 
             # Buscar cliente por DPI
             result = conn.execute(
@@ -535,3 +542,4 @@ def gestionar_tarjetas():
         dpi=dpi_enviado,
         rol=session.get("rol")
     )
+
