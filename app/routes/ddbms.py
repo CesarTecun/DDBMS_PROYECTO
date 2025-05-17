@@ -134,46 +134,6 @@ def ver_transacciones(sucursal, numero_cuenta):
 
 from flask import render_template, request, redirect
 
-@ddbms_bp.route('/acciones', methods=['GET'])
-def ver_formulario():
-    return render_template("acciones.html")
-
-@ddbms_bp.route('/acciones/ejecutar', methods=['POST'])
-def ejecutar_formulario():
-    sucursal = request.form['sucursal']
-    operacion = request.form['operacion']
-    cliente_id = request.form['cliente_id']
-    monto = request.form.get('monto')
-    cuenta_destino = request.form.get('cuenta_destino')
-    tarjeta = request.form.get('tarjeta')
-
-    conn = connections["master"].connect()
-    msg = ""
-
-    try:
-        if operacion == "crear_cuenta":
-            conn.execute(text("INSERT INTO cuentas (cliente_id, numero_cuenta, tipo, saldo) VALUES (:cid, UUID(), 'AHORRO', 0.00)"), {"cid": cliente_id})
-            msg = "Cuenta creada"
-        elif operacion == "transferencia":
-            conn.execute(text("INSERT INTO transacciones (cuenta_id, tipo, monto, descripcion) VALUES (:cid, 'TRANSFERENCIA', :monto, 'Transferencia a cuenta ' || :dest)"),
-                         {"cid": cliente_id, "monto": monto, "dest": cuenta_destino})
-            msg = "Transferencia registrada"
-        elif operacion == "asociar_tarjeta":
-            credit_conn = connections["credit"].connect()
-            credit_conn.execute(text("INSERT INTO cliente_tarjeta (cliente_id, tarjeta_id) VALUES (:cid, (SELECT id FROM tarjetas WHERE numero_tarjeta = :t))"),
-                                {"cid": cliente_id, "t": tarjeta})
-            credit_conn.close()
-            msg = "Tarjeta asociada"
-
-        conn.commit()
-    except Exception as e:
-        msg = f" Error: {e}"
-    finally:
-        conn.close()
-
-    return render_template("acciones.html", resultado=msg)
-
-
 @ddbms_bp.route("/clientes/registrar", methods=["GET", "POST"])
 def registrar_cliente():
     if not session.get("autenticado"):
@@ -302,10 +262,6 @@ def generar_numero_cuenta(codigo_banco, tipo):
     digito_verificador = str(suma % 10)
     return f"{codigo_banco}-{tipo}-{numero_principal}-{digito_verificador}"
 
-
-@ddbms_bp.route("/acciones/nueva", methods=["GET"])
-def menu_nuevo():
-    return render_template("menu_nuevo.html")
 
 @ddbms_bp.route("/acciones/transferencia", methods=["GET", "POST"])
 def transferencia():
@@ -542,4 +498,3 @@ def gestionar_tarjetas():
         dpi=dpi_enviado,
         rol=session.get("rol")
     )
-
