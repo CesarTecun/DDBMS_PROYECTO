@@ -433,3 +433,34 @@ def gestionar_tarjetas():
         tarjetas_cliente=tarjetas_cliente,
         rol=session.get("rol")
     )
+
+@ddbms_bp.route("/mercadeo/campanas", methods=["GET", "POST"])
+def gestionar_campanas():
+    if not session.get("autenticado") or session.get("rol") != "mercadeo":
+        return "❌ Acceso denegado", 403
+
+    mensaje = ""
+    conn = connections["mercadeo"].connect()
+
+    if request.method == "POST":
+        try:
+            data = request.form
+            conn.execute(text("""
+                INSERT INTO campana (nombre, descripcion, tipo, fecha_inicio, fecha_fin)
+                VALUES (:nombre, :descripcion, :tipo, :fecha_inicio, :fecha_fin)
+            """), {
+                "nombre": data["nombre"],
+                "descripcion": data["descripcion"],
+                "tipo": data["tipo"],
+                "fecha_inicio": data["fecha_inicio"],
+                "fecha_fin": data["fecha_fin"]
+            })
+            conn.commit()
+            mensaje = "✅ Campaña registrada correctamente."
+        except Exception as e:
+            mensaje = f"❌ Error al registrar campaña: {e}"
+
+    campanas = conn.execute(text("SELECT * FROM campana ORDER BY fecha_inicio DESC")).fetchall()
+    conn.close()
+
+    return render_template("campanas.html", campanas=campanas, mensaje=mensaje)

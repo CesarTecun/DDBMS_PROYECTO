@@ -13,6 +13,13 @@
       font-family: 'Segoe UI', sans-serif;
       transition: margin-left 0.3s;
     }
+    .main h4 {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1;
+      padding: 0.5rem 0;
+    }
 
     .sidebar {
       height: 100vh;
@@ -135,10 +142,9 @@
               class="d-block text-white mb-2 {% if request.path == '/dashboard' %}fw-bold text-decoration-underline{% endif %}">
               <i class="bi bi-eye me-2"></i> <span class="sidebar-label">Ver</span>
             </a>
-            {% if session.get("rol") != 'credit' %}
-            <a href="/clientes/registrar"
-              class="d-block text-white {% if request.path == '/clientes/registrar' %}fw-bold text-decoration-underline{% endif %}">
-              <i class="bi bi-person-plus me-2"></i> <span class="sidebar-label">Crear</span>
+            {% if session.get("rol") not in ['credit', 'mercadeo'] %}
+            <a href="/clientes/registrar" class="...">
+                <i class="bi bi-person-plus me-2"></i> <span class="sidebar-label">Crear</span>
             </a>
             {% endif %}
           </div>
@@ -160,6 +166,14 @@
       <i class="bi bi-arrow-left-right me-2"></i> <span class="sidebar-label">Transferencia</span>
     </a>
     {% endif %}
+
+    {% if session.get("rol") == "mercadeo" %}
+    <a href="/mercadeo/campanas" class="{% if '/mercadeo/campanas' in request.path %}active{% endif %}">
+      <i class="bi bi-megaphone me-2"></i> <span class="sidebar-label">Campañas</span>
+    </a>
+    {% endif %}
+
+
 
     <hr class="text-white">
     <a href="/logout">

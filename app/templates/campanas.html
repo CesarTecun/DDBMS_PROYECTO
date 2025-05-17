@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h2>Gestión de Campañas de Mercadeo</h2>
+
+    {% if mensaje %}
+        <div class="alert alert-info mt-3">{{ mensaje }}</div>
+    {% endif %}
+
+    <form method="POST" class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label">Nombre de la campaña</label>
+            <input type="text" class="form-control" name="nombre" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Tipo</label>
+            <select class="form-select" name="tipo" required>
+                <option value="CORREO">Correo</option>
+                <option value="SMS">SMS</option>
+                <option value="LLAMADA">Llamada</option>
+                <option value="PRESENCIAL">Presencial</option>
+            </select>
+        </div>
+        <div class="col-md-12">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-control" name="descripcion" rows="3"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Fecha de inicio</label>
+            <input type="date" class="form-control" name="fecha_inicio" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Fecha de fin</label>
+            <input type="date" class="form-control" name="fecha_fin" required>
+        </div>
+        <div class="col-md-12 text-end">
+            <button type="submit" class="btn btn-primary">Registrar campaña</button>
+        </div>
+    </form>
+
+    <h4 class="mt-5">Campañas existentes</h4>
+    <table class="table table-bordered mt-2">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in campanas %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.nombre }}</td>
+                <td>{{ c.tipo }}</td>
+                <td>{{ c.fecha_inicio }}</td>
+                <td>{{ c.fecha_fin }}</td>
+                <td>{{ c.descripcion }}</td>
+                <td>{{ c.tipo }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
